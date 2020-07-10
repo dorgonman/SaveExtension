@@ -371,6 +371,7 @@ void USlotDataTask_Loader::RespawnActors(const TArray<FActorRecord>& Records, co
 	for (const auto& Record : Records)
 	{
 		SpawnInfo.Name = Record.Name;
+		SpawnInfo.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Required_ErrorAndReturnNull;
 		World->SpawnActor(Record.Class, &Record.Transform, SpawnInfo);
 	}
 }
