@@ -51,7 +51,16 @@ void FLoadSlotInfosTask::DoWork()
 	if (!bLoadingSingleInfo && bSortByRecent)
 	{
 		LoadedSlots.Sort([](const USlotInfo& A, const USlotInfo& B) {
-			return A.SaveDate > B.SaveDate;
+			auto pItemA = &A;
+			auto pItemB = &B;
+			if (pItemA && pItemB)
+			{
+				return A.SaveDate > B.SaveDate;
+			}
+			else
+			{
+				return false;
+			}
 		});
 	}
 }
@@ -60,7 +69,11 @@ void FLoadSlotInfosTask::AfterFinish()
 {
 	for(auto& Slot : LoadedSlots)
 	{
-		Slot->ClearInternalFlags(EInternalObjectFlags::Async);
+		if (Slot) 
+		{
+			Slot->ClearInternalFlags(EInternalObjectFlags::Async);
+		}
+
 	}
 	Delegate.ExecuteIfBound(LoadedSlots);
 }
