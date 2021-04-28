@@ -46,7 +46,7 @@ class USlotDataTask_Loader : public USlotDataTask
 
 	FOnGameLoaded Delegate;
 
-protected:
+public:
 
 	// Async variables
 	TWeakObjectPtr<ULevel> CurrentLevel;
@@ -89,7 +89,7 @@ private:
 	/** Spawns Actors hat were saved but which actors are not in the world. */
 	void RespawnActors(const TArray<FActorRecord*>& Records, const ULevel* Level);
 
-protected:
+public:
 
 	//~ Begin Files
 	void StartLoadingData();

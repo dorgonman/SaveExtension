@@ -58,8 +58,7 @@ void USlotDataTask_Loader::OnStart()
 		return;
 	}
 
-	// We load data while the map opens or GC runs
-	StartLoadingData();
+
 
 	const UWorld* World = GetWorld();
 
@@ -162,6 +161,8 @@ void USlotDataTask_Loader::OnMapLoaded()
 		}
 		else
 		{
+			// We load data while the map opens or GC runs
+			StartLoadingData();
 			LoadState = ELoadDataTaskState::WaitingForData;
 		}
 	}

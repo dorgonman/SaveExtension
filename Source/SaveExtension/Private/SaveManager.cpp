@@ -6,11 +6,14 @@
 #include "LatentActions/LoadInfosAction.h"
 #include "Multithreading/DeleteSlotsTask.h"
 #include "Multithreading/LoadSlotInfosTask.h"
+#include "Multithreading/LoadFileTask.h"
 #include "SaveSettings.h"
 #include "Serialization/SlotDataTask_LevelLoader.h"
 #include "Serialization/SlotDataTask_LevelSaver.h"
 #include "Serialization/SlotDataTask_Loader.h"
 #include "Serialization/SlotDataTask_Saver.h"
+#include "Serialization/SlotDataTask_Loader.h"
+
 
 #include <Engine/GameViewportClient.h>
 #include <Engine/LevelStreaming.h>
@@ -90,19 +93,17 @@ bool USaveManager::SaveSlot(
 
 bool USaveManager::LoadSlot(FName SlotName, FOnGameLoaded OnLoaded)
 {
-	if (!CanLoadOrSave() || !IsSlotSaved(SlotName))
+	if (!CanLoadOrSave() || !IsSlotSaved(SlotName) || LoaderTask)
 	{
 		return false;
 	}
 
 	TryInstantiateInfo();
 
-	auto* Task = CreateTask<USlotDataTask_Loader>()
-		->Setup(SlotName)
-		->Bind(OnLoaded)
-		->Start();
+	LoaderTask = CreateTask<USlotDataTask_Loader>();
+	LoaderTask->Setup(SlotName)->Bind(OnLoaded)->Start();
 
-	return Task->IsSucceeded() || Task->IsScheduled();
+	return LoaderTask->IsSucceeded() || LoaderTask->IsScheduled();
 }
 
 bool USaveManager::DeleteSlot(FName SlotName)
@@ -475,6 +476,12 @@ void USaveManager::OnLoadFinished(const FSELevelFilter& Filter, const bool bErro
 	{
 		OnGameLoaded.Broadcast(CurrentInfo);
 	}
+	if (IsValid(LoaderTask)) 
+	{
+		LoaderTask->MarkPendingKill();
+		LoaderTask = nullptr;
+	}
+
 }
 
 void USaveManager::OnMapLoadStarted(const FString& MapName)
@@ -484,12 +491,18 @@ void USaveManager::OnMapLoadStarted(const FString& MapName)
 
 void USaveManager::OnMapLoadFinished(UWorld* LoadedWorld)
 {
-	if(auto* ActiveLoader = Cast<USlotDataTask_Loader>(Tasks.Num() ? Tasks[0] : nullptr))
-	{
-		ActiveLoader->OnMapLoaded();
-	}
 
-	UpdateLevelStreamings();
+	if (IsValid(LoaderTask))
+	{
+
+		if (auto* ActiveLoader = Cast<USlotDataTask_Loader>(Tasks.Num() ? Tasks[0] : nullptr))
+		{
+			ActiveLoader->OnMapLoaded();
+		}
+
+		UpdateLevelStreamings();
+
+	}
 }
 
 UWorld* USaveManager::GetWorld() const

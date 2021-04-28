@@ -29,7 +29,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameSavedMC, USlotInfo*, SlotInfo);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameLoadedMC, USlotInfo*, SlotInfo);
 
-
+class USlotDataTask_Loader;
 struct FLatentActionInfo;
 
 USTRUCT(BlueprintType)
@@ -95,7 +95,8 @@ private:
 	UPROPERTY(Transient)
 	TArray<USlotDataTask*> Tasks;
 
-
+	UPROPERTY(Transient)
+	USlotDataTask_Loader* LoaderTask = nullptr;
 	/************************************************************************/
 	/* METHODS											     			    */
 	/************************************************************************/
