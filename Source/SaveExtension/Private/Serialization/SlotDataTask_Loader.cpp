@@ -87,6 +87,7 @@ void USlotDataTask_Loader::OnStart()
 	}
 	else
 	{
+		StartLoadingData();
 		LoadState = ELoadDataTaskState::WaitingForData;
 	}
 }
