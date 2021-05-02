@@ -622,7 +622,7 @@ namespace Automatron
 		bool bCanUsePIEWorld = true;
 
 		FTestWorldSettings DefaultWorldSettings;
-
+		FDelegateHandle PIEStartedHandle;
 	private:
 		FString ClassName;
 		FString PrettyName;
@@ -1218,9 +1218,9 @@ namespace Automatron
 #	if WITH_EDITOR
 		// If there was no PIE world, start it and try again
 		if (bCanUsePIEWorld && !SelectedWorld && GIsEditor)
-		{
-			FDelegateHandle PIEStartedHandle = FEditorDelegates::PostPIEStarted.AddLambda(
-				[this, OnWorldReady, PIEStartedHandle](const bool bIsSimulating) {
+		{		
+			PIEStartedHandle = FEditorDelegates::PostPIEStarted.AddLambda(
+				[this, OnWorldReady](const bool bIsSimulating) {
 					FEditorDelegates::PostPIEStarted.Remove(PIEStartedHandle);
 
 					UWorld* SelectedWorld = FindGameWorld();
