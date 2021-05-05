@@ -14,7 +14,7 @@
 
 /** Represents a level in the world (streaming or persistent) */
 USTRUCT()
-struct FLevelRecord : public FBaseRecord
+struct SAVEEXTENSION_API FLevelRecord : public FBaseRecord
 {
 	GENERATED_BODY()
 
@@ -41,7 +41,7 @@ struct FLevelRecord : public FBaseRecord
 
 /** Represents a persistent level in the world */
 USTRUCT()
-struct FPersistentLevelRecord : public FLevelRecord
+struct SAVEEXTENSION_API FPersistentLevelRecord : public FLevelRecord
 {
 	GENERATED_BODY()
 
@@ -56,7 +56,7 @@ struct FPersistentLevelRecord : public FLevelRecord
 
 /** Represents a serialized streaming level in the world */
 USTRUCT()
-struct FStreamingLevelRecord : public FLevelRecord
+struct SAVEEXTENSION_API FStreamingLevelRecord : public FLevelRecord
 {
 	GENERATED_BODY()
 

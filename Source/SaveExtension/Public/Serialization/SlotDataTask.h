@@ -20,7 +20,7 @@ class USaveManager;
 * Base class for managing a SaveData file
 */
 UCLASS()
-class USlotDataTask : public UObject
+class SAVEEXTENSION_API USlotDataTask : public UObject
 {
 	GENERATED_BODY()
 

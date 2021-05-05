@@ -35,7 +35,7 @@ enum class ELoadDataTaskState : uint8
 * Manages the loading process of a SaveData file
 */
 UCLASS()
-class USlotDataTask_Loader : public USlotDataTask
+class SAVEEXTENSION_API USlotDataTask_Loader : public USlotDataTask
 {
 	GENERATED_BODY()
 

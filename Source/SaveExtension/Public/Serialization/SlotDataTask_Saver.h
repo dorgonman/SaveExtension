@@ -25,7 +25,7 @@
 * Manages the saving process of a SaveData file
 */
 UCLASS()
-class USlotDataTask_Saver : public USlotDataTask
+class SAVEEXTENSION_API USlotDataTask_Saver : public USlotDataTask
 {
 	GENERATED_BODY()
 

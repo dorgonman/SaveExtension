@@ -52,10 +52,12 @@ public:
 };
 
 //Only log in Editor
-#if WITH_EDITORONLY_DATA
-template <typename ...Args>
-void SELog(Args&& ...args) { ISaveExtension::Log(Forward<Args>(args)...); }
-#else
-template <typename ...Args>
-void SELog(Args&& ...args) {} // Optimized away by compiler
-#endif
+// #if WITH_EDITORONLY_DATA
+// template <typename ...Args>
+// void SELog(Args&& ...args) { ISaveExtension::Log(Forward<Args>(args)...); }
+//#else
+//template <typename ...Args>
+//void SELog(Args&& ...args) {} // Optimized away by compiler
+// remove SELog temporary since it get compile error in mac
+#define SELog(...)
+//#endif

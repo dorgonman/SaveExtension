@@ -13,7 +13,7 @@ class USlotData;
 
 
 USTRUCT()
-struct FBaseRecord
+struct SAVEEXTENSION_API FBaseRecord
 {
 	GENERATED_BODY()
 
@@ -40,7 +40,7 @@ FORCEINLINE bool operator==(const FBaseRecord& A, const FBaseRecord& B) { return
 
 /** Represents a serialized Object */
 USTRUCT()
-struct FObjectRecord : public FBaseRecord
+struct SAVEEXTENSION_API FObjectRecord : public FBaseRecord
 {
 	GENERATED_BODY()
 
@@ -70,7 +70,7 @@ struct FObjectRecord : public FBaseRecord
 
 /** Represents a serialized Component */
 USTRUCT()
-struct FComponentRecord : public FObjectRecord
+struct SAVEEXTENSION_API FComponentRecord : public FObjectRecord
 {
 	GENERATED_BODY()
 
@@ -83,7 +83,7 @@ struct FComponentRecord : public FObjectRecord
 
 /** Represents a serialized Actor */
 USTRUCT()
-struct FActorRecord : public FObjectRecord
+struct SAVEEXTENSION_API FActorRecord : public FObjectRecord
 {
 	GENERATED_BODY()
 

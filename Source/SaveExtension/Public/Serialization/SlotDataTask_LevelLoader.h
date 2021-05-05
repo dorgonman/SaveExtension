@@ -14,7 +14,7 @@
 * Manages the serializing process of a single level
 */
 UCLASS()
-class USlotDataTask_LevelLoader : public USlotDataTask_Loader
+class SAVEEXTENSION_API USlotDataTask_LevelLoader : public USlotDataTask_Loader
 {
 	GENERATED_BODY()
 
