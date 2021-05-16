@@ -47,22 +47,22 @@ void FLoadSlotInfosTask::DoWork()
 	{
 		LoadedSlots.Add(File.CreateAndDeserializeInfo(Manager));
 	}
-
-	if (!bLoadingSingleInfo && bSortByRecent)
-	{
-		LoadedSlots.Sort([](const USlotInfo& A, const USlotInfo& B) {
-			auto pItemA = &A;
-			auto pItemB = &B;
-			if (pItemA && pItemB)
-			{
-				return A.SaveDate > B.SaveDate;
-			}
-			else
-			{
-				return false;
-			}
-		});
-	}
+	// crash on android disable for now
+	//if (!bLoadingSingleInfo && bSortByRecent)
+	//{
+	//	LoadedSlots.Sort([](const USlotInfo& A, const USlotInfo& B) {
+	//		auto pItemA = &A;
+	//		auto pItemB = &B;
+	//		if (pItemA && pItemB)
+	//		{
+	//			return A.SaveDate > B.SaveDate;
+	//		}
+	//		else
+	//		{
+	//			return false;
+	//		}
+	//	});
+	//}
 }
 
 void FLoadSlotInfosTask::AfterFinish()
