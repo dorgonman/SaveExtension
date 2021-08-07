@@ -19,7 +19,7 @@
 #include <CoreMinimal.h>
 #include <Engine/GameInstance.h>
 #include <GenericPlatform/GenericPlatformFile.h>
-#include <HAL/PlatformFilemanager.h>
+#include <HAL/PlatformFileManager.h>
 #include <Subsystems/GameInstanceSubsystem.h>
 #include <Tickable.h>
 
@@ -578,7 +578,7 @@ inline USaveManager* USaveManager::Get(const UObject* Context)
 
 inline bool USaveManager::IsTickable() const
 {
-	return !HasAnyFlags(RF_ClassDefaultObject) && !IsPendingKill();
+	return !HasAnyFlags(RF_ClassDefaultObject) && !IsValid(this);
 }
 
 inline UWorld* USaveManager::GetTickableGameObjectWorld() const

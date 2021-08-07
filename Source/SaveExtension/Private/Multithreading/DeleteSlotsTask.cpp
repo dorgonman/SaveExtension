@@ -2,7 +2,7 @@
 
 #include "Multithreading/DeleteSlotsTask.h"
 
-#include <HAL/PlatformFilemanager.h>
+#include <HAL/PlatformFileManager.h>
 
 #include "FileAdapter.h"
 #include "SavePreset.h"

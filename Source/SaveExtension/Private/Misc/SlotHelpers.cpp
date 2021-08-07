@@ -2,7 +2,7 @@
 
 #include <Misc/SlotHelpers.h>
 #include <Misc/Paths.h>
-#include <HAL/PlatformFilemanager.h>
+#include <HAL/PlatformFileManager.h>
 
 
 void FSlotHelpers::FindSlotFileNames(TArray<FString>& FoundSlots)
