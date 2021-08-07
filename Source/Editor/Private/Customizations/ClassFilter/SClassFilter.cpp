@@ -13,7 +13,6 @@
 #include <ScopedTransaction.h>
 #include <Textures/SlateIcon.h>
 #include <PropertyHandle.h>
-#include <Toolkits/AssetEditorManager.h>
 #include <AssetToolsModule.h>
 #include <Widgets/Input/SHyperlink.h>
 #include <Widgets/Input/SSearchBox.h>
@@ -353,7 +352,7 @@ void SClassFilter::MarkClass(FSEClassFilterNodePtr Class, EClassFilterState Stat
 				Filter.Filter->AllowedClasses.Add(ClassAsset);
 				Filter.Filter->IgnoredClasses.Remove(ClassAsset);
 			}
-			if (PropertyHandle) PropertyHandle->NotifyPostChange();
+			if (PropertyHandle) PropertyHandle->NotifyPostChange(EPropertyChangeType::ValueSet);
 		}
 		break;
 	}
@@ -370,7 +369,7 @@ void SClassFilter::MarkClass(FSEClassFilterNodePtr Class, EClassFilterState Stat
 				Filter.Filter->IgnoredClasses.Add(ClassAsset);
 				Filter.Filter->AllowedClasses.Remove(ClassAsset);
 			}
-			if (PropertyHandle) PropertyHandle->NotifyPostChange();
+			if (PropertyHandle) PropertyHandle->NotifyPostChange(EPropertyChangeType::ValueSet);
 		}
 		break;
 	}
@@ -387,7 +386,7 @@ void SClassFilter::MarkClass(FSEClassFilterNodePtr Class, EClassFilterState Stat
 				Filter.Filter->IgnoredClasses.Remove(ClassAsset);
 				Filter.Filter->AllowedClasses.Remove(ClassAsset);
 			}
-			if (PropertyHandle) PropertyHandle->NotifyPostChange();
+			if (PropertyHandle) PropertyHandle->NotifyPostChange(EPropertyChangeType::ValueSet);
 		}
 		break;
 	}}
