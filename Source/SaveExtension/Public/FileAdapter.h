@@ -62,7 +62,7 @@ struct FSaveFile
 {
 	int32 FileTypeTag = 0;
 	int32 SaveGameFileVersion = 0;
-	int32 PackageFileUEVersion = 0;
+	FPackageFileVersion PackageFileUEVersion;
 	FEngineVersion SavedEngineVersion;
 	int32 CustomVersionFormat = int32(ECustomVersionSerializationFormat::Unknown);
 	FCustomVersionContainer CustomVersions;
