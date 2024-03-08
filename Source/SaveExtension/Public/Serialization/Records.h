@@ -1,19 +1,20 @@
-// Copyright 2015-2020 Piperift. All Rights Reserved.
-
+// Copyright 2015-2024 Piperift. All Rights Reserved.
 
 #pragma once
 
-#include <CoreMinimal.h>
-#include <Engine/LevelStreaming.h>
-#include <Engine/LevelScriptActor.h>
+#include <GameFramework/OnlineReplStructs.h>
 
 #include "Records.generated.h"
 
-class USlotData;
+
+struct FSEClassFilter;
+class USaveSlotData;
+class APlayerState;
+class USubsystem;
 
 
 USTRUCT()
-struct SAVEEXTENSION_API FBaseRecord
+struct FBaseRecord
 {
 	GENERATED_BODY()
 
@@ -31,16 +32,24 @@ struct SAVEEXTENSION_API FBaseRecord
 	virtual ~FBaseRecord() {}
 };
 
-template<>
+template <>
 struct TStructOpsTypeTraits<FBaseRecord> : public TStructOpsTypeTraitsBase2<FBaseRecord>
-{ enum { WithSerializer = true }; };
+{
+	enum
+	{
+		WithSerializer = true
+	};
+};
 
-FORCEINLINE bool operator==(const FBaseRecord& A, const FBaseRecord& B) { return A.Name == B.Name; }
+inline bool operator==(const FBaseRecord& A, const FBaseRecord& B)
+{
+	return A.Name == B.Name;
+}
 
 
 /** Represents a serialized Object */
 USTRUCT()
-struct SAVEEXTENSION_API FObjectRecord : public FBaseRecord
+struct FObjectRecord : public FBaseRecord
 {
 	GENERATED_BODY()
 
@@ -58,32 +67,34 @@ struct SAVEEXTENSION_API FObjectRecord : public FBaseRecord
 
 	bool IsValid() const
 	{
-		return !Name.IsNone() && Class && Data.Num() > 0;
+		return !Name.IsNone() && Class;
 	}
 
-	FORCEINLINE bool operator== (const UObject* Other) const
+	bool operator==(const UObject* Other) const
 	{
-		return Name == Other->GetFName() && Class == Other->GetClass();
+		return Other && Name == Other->GetFName() && Class == Other->GetClass();
 	}
 };
 
 
 /** Represents a serialized Component */
 USTRUCT()
-struct SAVEEXTENSION_API FComponentRecord : public FObjectRecord
+struct FComponentRecord : public FObjectRecord
 {
 	GENERATED_BODY()
 
 	FTransform Transform;
 
 
+	FComponentRecord() : Super() {}
+	FComponentRecord(const UActorComponent* Component) : Super(Component) {}
 	virtual bool Serialize(FArchive& Ar) override;
 };
 
 
 /** Represents a serialized Actor */
 USTRUCT()
-struct SAVEEXTENSION_API FActorRecord : public FObjectRecord
+struct FActorRecord : public FObjectRecord
 {
 	GENERATED_BODY()
 
@@ -98,6 +109,56 @@ struct SAVEEXTENSION_API FActorRecord : public FObjectRecord
 
 	FActorRecord() : Super() {}
 	FActorRecord(const AActor* Actor) : Super(Actor) {}
-
 	virtual bool Serialize(FArchive& Ar) override;
 };
+
+
+/** Represents a serialized Subsystem */
+USTRUCT()
+struct FSubsystemRecord : public FObjectRecord
+{
+	GENERATED_BODY()
+
+	FSubsystemRecord() : Super() {}
+	FSubsystemRecord(const USubsystem* Subsystem);
+};
+
+USTRUCT(BlueprintType)
+struct FPlayerRecord
+{
+	GENERATED_BODY()
+
+	FUniqueNetIdRepl UniqueId;
+
+	FActorRecord PlayerState;
+	FActorRecord Controller;
+	FActorRecord Pawn;
+
+
+	FPlayerRecord() = default;
+	FPlayerRecord(const FUniqueNetIdRepl& UniqueId) : UniqueId(UniqueId) {}
+	bool operator==(const FPlayerRecord& Other) const;
+};
+
+
+namespace SERecords
+{
+	extern const FName TagNoTransform;
+	extern const FName TagNoPhysics;
+	extern const FName TagNoTags;
+
+
+	void SerializeActor(const AActor* Actor, FActorRecord& Record, const FSEClassFilter& ComponentFilter);
+	bool DeserializeActor(AActor* Actor, const FActorRecord& Record, const FSEClassFilter& ComponentFilter);
+	void SerializePlayer(
+		const APlayerState* PlayerState, FPlayerRecord& Record, const FSEClassFilter& ComponentFilter);
+	void DeserializePlayer(
+		APlayerState* PlayerState, const FPlayerRecord& Record, const FSEClassFilter& ComponentFilter);
+
+	bool IsSaveTag(const FName& Tag);
+	bool StoresTransform(const AActor* Actor);
+	bool StoresPhysics(const AActor* Actor);
+	bool StoresTags(const AActor* Actor);
+	bool IsProcedural(const AActor* Actor);
+	bool StoresTags(const UActorComponent* Component);
+}	 // namespace SERecords

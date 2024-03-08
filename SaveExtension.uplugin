@@ -10,6 +10,7 @@
     "CreatedByURL": "https://piperift.com",
     "DocsURL": "https://piperift.com/SaveExtension/",
     "SupportURL": "info@piperift.com",
+    "EngineVersion": "5.3",
     "EnabledByDefault": true,
     "CanContainContent": false,
     "IsBetaVersion": false,
@@ -17,12 +18,26 @@
         {
             "Name": "SaveExtension",
             "Type": "Runtime",
-            "LoadingPhase": "PreDefault"
+            "LoadingPhase": "PreDefault",
+            "WhitelistPlatforms": [
+                "Win64",
+                "Mac",
+                "IOS",
+                "Android",
+                "Linux"
+            ]
         },
         {
             "Name": "SaveExtensionEditor",
             "Type": "Editor",
-            "LoadingPhase": "PostEngineInit"
+            "LoadingPhase": "PostEngineInit",
+            "WhitelistPlatforms": [
+                "Win64",
+                "Mac",
+                "IOS",
+                "Android",
+                "Linux"
+            ]
         },
         {
             "Name": "SaveExtensionTest",

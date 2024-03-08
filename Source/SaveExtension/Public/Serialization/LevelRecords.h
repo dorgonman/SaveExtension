@@ -1,26 +1,23 @@
-// Copyright 2015-2020 Piperift. All Rights Reserved.
+// Copyright 2015-2024 Piperift. All Rights Reserved.
 
 
 #pragma once
 
-#include <CoreMinimal.h>
-#include <Engine/LevelStreaming.h>
-#include <Engine/LevelScriptActor.h>
-
-#include "Records.h"
 #include "LevelFilter.h"
+#include "Records.h"
+
+#include <CoreMinimal.h>
+#include <Engine/LevelScriptActor.h>
+#include <Engine/LevelStreaming.h>
+
 #include "LevelRecords.generated.h"
 
 
 /** Represents a level in the world (streaming or persistent) */
 USTRUCT()
-struct SAVEEXTENSION_API FLevelRecord : public FBaseRecord
+struct FLevelRecord : public FBaseRecord
 {
 	GENERATED_BODY()
-
-	bool bOverrideGeneralFilter = false;
-	// Filter is used if bOverrideGeneralFilter is true
-	FSELevelFilter Filter;
 
 	/** Record of the Level Script Actor */
 	FActorRecord LevelScript;
@@ -28,12 +25,20 @@ struct SAVEEXTENSION_API FLevelRecord : public FBaseRecord
 	/** Records of the World Actors */
 	TArray<FActorRecord> Actors;
 
+	/** Not-serialized. Assigned before loading and saving by the SaveSlot */
+	FSELevelFilter Filter;
+
+	/** Not-serialized. During saving or loading points to the live actor */
+	TArray<TPair<FActorRecord*, TWeakObjectPtr<AActor>>> RecordsToActors;
 
 	FLevelRecord() : Super() {}
 
 	virtual bool Serialize(FArchive& Ar) override;
 
-	bool IsValid() const { return !Name.IsNone(); }
+	bool IsValid() const
+	{
+		return !Name.IsNone();
+	}
 
 	void CleanRecords();
 };
@@ -41,7 +46,7 @@ struct SAVEEXTENSION_API FLevelRecord : public FBaseRecord
 
 /** Represents a persistent level in the world */
 USTRUCT()
-struct SAVEEXTENSION_API FPersistentLevelRecord : public FLevelRecord
+struct FPersistentLevelRecord : public FLevelRecord
 {
 	GENERATED_BODY()
 
@@ -56,7 +61,7 @@ struct SAVEEXTENSION_API FPersistentLevelRecord : public FLevelRecord
 
 /** Represents a serialized streaming level in the world */
 USTRUCT()
-struct SAVEEXTENSION_API FStreamingLevelRecord : public FLevelRecord
+struct FStreamingLevelRecord : public FLevelRecord
 {
 	GENERATED_BODY()
 
