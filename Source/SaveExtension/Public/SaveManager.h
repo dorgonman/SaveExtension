@@ -12,6 +12,7 @@
 
 #include <Subsystems/GameInstanceSubsystem.h>
 #include <Tickable.h>
+#include <Engine/GameInstance.h>
 
 #include "SaveManager.generated.h"
 
