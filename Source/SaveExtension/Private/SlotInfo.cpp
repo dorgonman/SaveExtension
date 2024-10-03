@@ -9,6 +9,7 @@
 #include <Engine/GameViewportClient.h>
 #include <Misc/FileHelper.h>
 #include <Engine/Engine.h>
+#include "FileAdapter.h"
 
 
 UTexture2D* USlotInfo::GetThumbnail() const

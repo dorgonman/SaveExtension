@@ -4,6 +4,9 @@
 
 #include <Async/AsyncWork.h>
 #include "FileAdapter.h"
+#include "SlotInfo.h"
+#include "SlotData.h"
+#include "SaveManager.h"
 
 
 /////////////////////////////////////////////////////

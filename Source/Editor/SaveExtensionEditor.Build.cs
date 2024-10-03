@@ -30,7 +30,8 @@ namespace UnrealBuildTool.Rules
 				"EditorStyle",
 				"ClassViewer",
 				"BlueprintGraph",
-				"GraphEditor"
+				"GraphEditor",
+				"GameProjectGeneration"
 			});
 		}
 	}

@@ -29,7 +29,7 @@ DECLARE_DELEGATE_OneParam(FOnGameSaved, USlotInfo*);
 // Async task to serialize actors from a level.
 class FMTTask_SerializeActors : public FMTTask
 {
-	const TArray<AActor*>* const LevelActors;
+	const TArray<TObjectPtr<AActor>>* const LevelActors;
 	const int32 StartIndex;
 	const int32 Num;
 	const bool bStoreGameInstance = false;
@@ -43,7 +43,8 @@ class FMTTask_SerializeActors : public FMTTask
 
 public:
 	FMTTask_SerializeActors(const UWorld* World, USlotData* SlotData,
-		const TArray<AActor*>* const InLevelActors, const int32 InStartIndex, const int32 InNum, bool bStoreGameInstance,
+		const TArray<TObjectPtr<AActor>>* const InLevelActors, const int32 InStartIndex, const int32 InNum,
+		bool bStoreGameInstance,
 		FLevelRecord* InLevelRecord, const FSELevelFilter& Filter)
 		: FMTTask(false, World, SlotData, Filter)
 		, LevelActors(InLevelActors)

@@ -5,12 +5,16 @@
 #include <GameFramework/GameModeBase.h>
 #include <Serialization/MemoryWriter.h>
 
+#include "Async/AsyncWork.h"
+#include "FileAdapter.h"
 #include "Misc/SlotHelpers.h"
 #include "SaveManager.h"
-#include "SlotInfo.h"
-#include "SlotData.h"
 #include "SavePreset.h"
-#include "FileAdapter.h"
+#include "Serialization/LevelRecords.h"
+#include "Serialization/MTTask_SerializeActors.h"
+#include "SlotData.h"
+#include "SlotInfo.h"
+#include "Serialization/SlotDataTask.h"
 
 
 /////////////////////////////////////////////////////

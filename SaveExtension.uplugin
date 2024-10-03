@@ -10,7 +10,7 @@
     "CreatedByURL": "https://piperift.com",
     "DocsURL": "https://piperift.com/SaveExtension/",
     "SupportURL": "info@piperift.com",
-    "EngineVersion": "4.26",
+    "EngineVersion": "5.4",
     "EnabledByDefault": true,
     "CanContainContent": false,
     "IsBetaVersion": false,
@@ -21,7 +21,6 @@
             "LoadingPhase": "PreDefault",
             "WhitelistPlatforms": [
                 "Win64",
-                "Win32",
                 "Linux",
                 "Android",
                 "PS5",
@@ -36,7 +35,6 @@
             "LoadingPhase": "PostEngineInit",
             "WhitelistPlatforms": [
                 "Win64",
-                "Win32",
                 "Linux",
                 "Android",
                 "PS5",
@@ -51,7 +49,6 @@
             "LoadingPhase": "PreDefault",
             "WhitelistPlatforms": [
                 "Win64",
-                "Win32",
                 "Linux",
                 "Mac"
             ]

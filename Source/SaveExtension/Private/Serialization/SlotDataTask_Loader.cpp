@@ -275,7 +275,7 @@ void USlotDataTask_Loader::DeserializeLevelSync(const ULevel* Level, const ULeve
 
 		for (auto ActorItr = Level->Actors.CreateConstIterator(); ActorItr; ++ActorItr)
 		{
-			auto* Actor = *ActorItr;
+			TObjectPtr<AActor> Actor = *ActorItr;
 			if (IsValid(Actor) && Filter.ShouldSave(Actor))
 			{
 				DeserializeLevel_Actor(Actor, *LevelRecord, Filter);
@@ -316,7 +316,7 @@ void USlotDataTask_Loader::DeserializeLevelASync(ULevel* Level, ULevelStreaming*
 
 	// Copy actors array. New actors won't be considered for deserialization
 	CurrentLevelActors.Empty(Level->Actors.Num());
-	for (auto* Actor : Level->Actors)
+	for (TObjectPtr<AActor> Actor : Level->Actors)
 	{
 		if(IsValid(Actor))
 		{

@@ -14,7 +14,7 @@
 #include <AssetToolsModule.h>
 #include <IContentBrowserSingleton.h>
 #include <ContentBrowserModule.h>
-#include <GameProjectGeneration/Public/GameProjectGenerationModule.h>
+#include <GameProjectGenerationModule.h>
 #include <Logging/MessageLog.h>
 #include <SourceCodeNavigation.h>
 #include <Framework/Multibox/MultiBoxBuilder.h>
