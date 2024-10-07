@@ -98,7 +98,7 @@ void USlotDataTask_Saver::OnStart()
 
 		//Save Level info in both files
 		SlotInfo->Map = FName{ FSlotHelpers::GetWorldName(World) };
-		SlotData->Map = SlotData->Map;
+		SlotData->Map = SlotInfo->Map;
 
 		SlotData->bStoreGameInstance = Preset->bStoreGameInstance;
 		SlotData->GeneralLevelFilter = Preset->ToFilter();
@@ -166,9 +166,9 @@ void USlotDataTask_Saver::BeginDestroy()
 void USlotDataTask_Saver::SerializeWorld()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(USlotDataTask_Saver::SerializeWorld);
-
+	USaveManager* Manager = GetManager();
 	// Must have Authority
-	if (!GetWorld()->GetAuthGameMode())
+	if (!Manager->CanLoadOrSave())
 	{
 		return;
 	}
