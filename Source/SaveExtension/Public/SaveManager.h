@@ -19,7 +19,7 @@
 #include <CoreMinimal.h>
 #include <Engine/GameInstance.h>
 #include <GenericPlatform/GenericPlatformFile.h>
-#include <HAL/PlatformFilemanager.h>
+#include <HAL/PlatformFileManager.h>
 #include <Subsystems/GameInstanceSubsystem.h>
 #include <Tickable.h>
 
