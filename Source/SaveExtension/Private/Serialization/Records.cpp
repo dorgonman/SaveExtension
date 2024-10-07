@@ -15,11 +15,11 @@ bool FBaseRecord::Serialize(FArchive& Ar)
 
 FObjectRecord::FObjectRecord(const UObject* Object) : Super()
 {
-	Class = nullptr;
+	SoftClassPath.Reset();
 	if (Object)
 	{
 		Name = Object->GetFName();
-		Class = Object->GetClass();
+		SoftClassPath = Object->GetClass();
 	}
 }
 
@@ -28,11 +28,11 @@ bool FObjectRecord::Serialize(FArchive& Ar)
 	Super::Serialize(Ar);
 
 	if (!Name.IsNone())
-		Ar << Class;
+		Ar << SoftClassPath;
 	else if (Ar.IsLoading())
-		Class = nullptr;
+		SoftClassPath.Reset();
 
-	if (Class)
+	if (SoftClassPath.IsValid())
 	{
 		Ar << Data;
 		Ar << Tags;
@@ -43,7 +43,7 @@ bool FObjectRecord::Serialize(FArchive& Ar)
 bool FComponentRecord::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
-	if (Class)
+	if (SoftClassPath.IsValid())
 	{
 		Ar << Transform;
 	}
@@ -53,7 +53,7 @@ bool FComponentRecord::Serialize(FArchive& Ar)
 bool FActorRecord::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
-	if (!Class)
+	if (!SoftClassPath.IsValid())
 	{
 		return true;
 	}

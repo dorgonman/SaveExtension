@@ -3,6 +3,7 @@
 #include "Serialization/SlotDataTask_Loader.h"
 
 #include <GameFramework/Character.h>
+#include <GameFramework/GameModeBase.h>
 #include <Serialization/MemoryReader.h>
 #include <Kismet/GameplayStatics.h>
 #include <Components/PrimitiveComponent.h>
@@ -12,6 +13,7 @@
 #include "SavePreset.h"
 #include "SaveManager.h"
 #include "Serialization/SEArchive.h"
+
 
 
 /////////////////////////////////////////////////////
@@ -76,8 +78,25 @@ void USlotDataTask_Loader::OnStart()
 			Finish(false);
 			return;
 		}
-
-		UGameplayStatics::OpenLevel(this, FName{ MapToOpen });
+		bool bIsHostingServer = false;
+		auto pWorld = GetWorld();
+		do
+		{
+			if (!pWorld) break;
+			auto pGameMode = GetWorld()->GetAuthGameMode();
+			if (!pGameMode) break;
+			bIsHostingServer = (pGameMode->GetNetMode() == NM_DedicatedServer || 
+							    pGameMode->GetNetMode() == NM_ListenServer);
+		} while (0);
+		if (bIsHostingServer) 
+		{
+			pWorld->ServerTravel(MapToOpen, false, false);
+		}
+		else 
+		{
+			UGameplayStatics::OpenLevel(this, FName{MapToOpen});
+		}
+		//
 
 		SELog(Preset, "Slot '" + SlotName.ToString() + "' is recorded on another Map. Loading before charging slot.", FColor::White, false, 1);
 		return;
@@ -466,7 +485,9 @@ void USlotDataTask_Loader::RespawnActors(const TArray<FActorRecord*>& Records, c
 	for (auto* Record : Records)
 	{
 		SpawnInfo.Name = Record->Name;
-		auto* NewActor = World->SpawnActor(Record->Class, &Record->Transform, SpawnInfo);
+
+		auto* NewActor =
+			World->SpawnActor(Record->SoftClassPath.TryLoadClass<UObject>(), &Record->Transform, SpawnInfo);
 
 		// We update the name on the record in case it changed
 		Record->Name = NewActor->GetFName();
@@ -479,7 +500,7 @@ void USlotDataTask_Loader::DeserializeLevel_Actor(AActor* const Actor, const FLe
 
 	// Find the record
 	const FActorRecord* const Record = LevelRecord.Actors.FindByKey(Actor);
-	if (Record && Record->IsValid() && Record->Class == Actor->GetClass())
+	if (Record && Record->IsValid() && Record->SoftClassPath.TryLoadClass<AActor>() == Actor->GetClass())
 	{
 		DeserializeActor(Actor, *Record, Filter);
 	}
@@ -491,7 +512,7 @@ void USlotDataTask_Loader::DeserializeGameInstance()
 	auto* GameInstance = GetWorld()->GetGameInstance();
 	const FObjectRecord& Record = SlotData->GameInstance;
 
-	if (!IsValid(GameInstance) || GameInstance->GetClass() != Record.Class)
+	if (!IsValid(GameInstance) || GameInstance->GetClass() != Record.SoftClassPath.TryLoadClass<UGameInstance>())
 		bSuccess = false;
 
 	if (bSuccess)

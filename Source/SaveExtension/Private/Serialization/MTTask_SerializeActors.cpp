@@ -121,7 +121,7 @@ void FMTTask_SerializeActors::SerializeActorComponents(const AActor* Actor, FAct
 		{
 			FComponentRecord ComponentRecord;
 			ComponentRecord.Name = Component->GetFName();
-			ComponentRecord.Class = Component->GetClass();
+			ComponentRecord.SoftClassPath = Component->GetClass();
 
 			if (Filter.StoresTransform(Component))
 			{

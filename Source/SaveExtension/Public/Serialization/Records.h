@@ -44,26 +44,28 @@ struct FObjectRecord : public FBaseRecord
 {
 	GENERATED_BODY()
 
-	UPROPERTY()
-	UClass* Class;
+	//UPROPERTY()
+	//TObjectPtr<UClass> Class;
+	FSoftClassPath SoftClassPath;
 
 	TArray<uint8> Data;
 	TArray<FName> Tags;
 
 
-	FObjectRecord() : Super(), Class(nullptr) {}
+	FObjectRecord() : Super() {}
 	FObjectRecord(const UObject* Object);
 
 	virtual bool Serialize(FArchive& Ar) override;
 
 	bool IsValid() const
 	{
-		return !Name.IsNone() && Class && Data.Num() > 0;
+		return !Name.IsNone() && SoftClassPath.IsValid() && Data.Num() > 0;
 	}
 
 	FORCEINLINE bool operator== (const UObject* Other) const
 	{
-		return Other && Name == Other->GetFName() && Class == Other->GetClass();
+		return Other && Name == Other->GetFName() &&
+			   SoftClassPath.TryLoadClass<UObject>() == Other->GetClass();
 	}
 };
 

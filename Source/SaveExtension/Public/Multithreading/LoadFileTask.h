@@ -34,10 +34,12 @@ public:
 		if(SlotInfo.IsValid())
 		{
 			SlotInfo->ClearInternalFlags(EInternalObjectFlags::Async);
+			SlotInfo->RemoveFromRoot();
 		}
 		if(SlotData.IsValid())
 		{
 			SlotData->ClearInternalFlags(EInternalObjectFlags::Async);
+			SlotData->RemoveFromRoot();
 		}
 	}
 
@@ -49,7 +51,15 @@ public:
 			FSaveFile File;
 			File.Read(FileReader, false);
 			SlotInfo = File.CreateAndDeserializeInfo(Manager.Get());
+			if (SlotInfo.IsValid())
+			{
+				SlotInfo->AddToRoot();
+			}
 			SlotData = File.CreateAndDeserializeData(Manager.Get());
+			if (SlotData.IsValid())
+			{
+				SlotData->AddToRoot();
+			}
 		}
 	}
 
