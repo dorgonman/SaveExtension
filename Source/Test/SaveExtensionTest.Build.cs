@@ -9,7 +9,6 @@ namespace UnrealBuildTool.Rules
 		public SaveExtensionTest(ReadOnlyTargetRules Target) : base(Target)
 		{
 			PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-			bEnforceIWYU = true;
 
 			PublicDependencyModuleNames.AddRange(new string[]
 			{

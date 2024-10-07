@@ -8,7 +8,6 @@ namespace UnrealBuildTool.Rules
 	public class SaveExtensionEditor : ModuleRules {
 		public SaveExtensionEditor(ReadOnlyTargetRules Target) : base(Target) {
 			PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-			bEnforceIWYU = true;
 
 			PublicDependencyModuleNames.AddRange( new string[]
 			{

@@ -18,30 +18,12 @@
         {
             "Name": "SaveExtension",
             "Type": "Runtime",
-            "LoadingPhase": "PreDefault",
-            "WhitelistPlatforms": [
-                "Win64",
-                "Linux",
-                "Android",
-                "PS5",
-                "XboxOne",
-                "Switch",
-                "Mac"
-            ]
+            "LoadingPhase": "PreDefault"
         },
         {
             "Name": "SaveExtensionEditor",
             "Type": "Editor",
-            "LoadingPhase": "PostEngineInit",
-            "WhitelistPlatforms": [
-                "Win64",
-                "Linux",
-                "Android",
-                "PS5",
-                "XboxOne",
-                "Switch",
-                "Mac"
-            ]
+            "LoadingPhase": "PostEngineInit"
         },
         {
             "Name": "SaveExtensionTest",
