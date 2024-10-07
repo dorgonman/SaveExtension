@@ -27,8 +27,9 @@
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameSavedMC, USlotInfo*, SlotInfo);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnGameSavedMCNative, USlotInfo*);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameLoadedMC, USlotInfo*, SlotInfo);
-
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnGameLoadedMCNative, USlotInfo*);
 
 struct FLatentActionInfo;
 
@@ -359,7 +360,7 @@ public:
 		return IsValidSlot(SlotId)? LoadInfo(GetSlotNameFromId(SlotId)) : nullptr;
 	}
 
-protected:
+
 	bool CanLoadOrSave();
 
 private:
@@ -418,10 +419,11 @@ protected:
 public:
 	UPROPERTY(BlueprintAssignable, Category = SaveExtension)
 	FOnGameSavedMC OnGameSaved;
+	FOnGameSavedMCNative OnGameSavedNative;
 
 	UPROPERTY(BlueprintAssignable, Category = SaveExtension)
 	FOnGameLoadedMC OnGameLoaded;
-
+	FOnGameLoadedMCNative OnGameLoadedNative;
 
 	/** Subscribe to receive save and load events on an Interface */
 	UFUNCTION(Category = SaveExtension, BlueprintCallable)

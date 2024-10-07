@@ -435,6 +435,7 @@ void USaveManager::OnSaveFinished(const FSELevelFilter& Filter, const bool bErro
 	if (!bError)
 	{
 		OnGameSaved.Broadcast(CurrentInfo);
+		OnGameSavedNative.Broadcast(CurrentInfo);
 	}
 }
 
@@ -474,6 +475,7 @@ void USaveManager::OnLoadFinished(const FSELevelFilter& Filter, const bool bErro
 	if (!bError)
 	{
 		OnGameLoaded.Broadcast(CurrentInfo);
+		OnGameLoadedNative.Broadcast(CurrentInfo);
 	}
 }
 

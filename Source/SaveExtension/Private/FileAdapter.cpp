@@ -36,6 +36,7 @@ FScopedFileWriter::FScopedFileWriter(FStringView Filename, int32 Flags)
 {
 	if (!Filename.IsEmpty())
 	{
+		UE_LOG(LogSaveExtension, Log, TEXT("Saving file '%s'"), *FPaths::ConvertRelativePathToFull(Filename.GetData()));
 		Writer = IFileManager::Get().CreateFileWriter(Filename.GetData(), Flags);
 	}
 }
@@ -239,6 +240,13 @@ bool FFileAdapter::SaveFile(FStringView SlotName, USlotInfo* Info, USlotData* Da
 		return false;
 	}
 
+	FString SlotSaveFolder = GetSaveFolder();
+	// check if SlotPathFullPath folder exists, if not create it
+	if (!IFileManager::Get().DirectoryExists(*SlotSaveFolder))
+	{
+		IFileManager::Get().MakeDirectory(*SlotSaveFolder, true);
+	}
+
 	FScopedFileWriter FileWriter(GetSlotPath(SlotName));
 	if(FileWriter.IsValid())
 	{
@@ -300,7 +308,7 @@ void FFileAdapter::DeserializeObject(UObject*& Object, FStringView ClassName, co
 		return;
 	}
 
-	UClass* ObjectClass = FindObject<UClass>(ANY_PACKAGE, ClassName.GetData());
+	UClass* ObjectClass = FindFirstObjectSafe<UClass>(ClassName.GetData());
 	if (!ObjectClass)
 	{
 		ObjectClass = LoadObject<UClass>(nullptr, ClassName.GetData());
