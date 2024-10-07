@@ -28,7 +28,7 @@ public:
 
 	void DoWork()
 	{
-		FFileAdapter::SaveFile(SlotName, Info, Data, bUseCompression);
+		ensure(FFileAdapter::SaveFile(SlotName, Info, Data, bUseCompression));
 	}
 
 	FORCEINLINE TStatId GetStatId() const
