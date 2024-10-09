@@ -3,7 +3,17 @@
 #include "Serialization/MTTask_SerializeActors.h"
 #include <Serialization/MemoryWriter.h>
 #include <Components/PrimitiveComponent.h>
+#include <GameFramework/PlayerState.h>
+#include <GameFramework/GameStateBase.h>
+#include <GameFramework/PlayerController.h>
+#include <GameFramework/Pawn.h>
+#include <GameFramework/GameSession.h>
+#include <GameFramework/GameModeBase.h>
 
+// GameplayDebugger
+#include <GameplayDebuggerCategoryReplicator.h>
+
+// SaveExtension
 #include "SaveManager.h"
 #include "SlotInfo.h"
 #include "SlotData.h"
@@ -11,7 +21,12 @@
 #include "Serialization/SEArchive.h"
 
 
-/////////////////////////////////////////////////////
+
+
+
+
+
+	/////////////////////////////////////////////////////
 // FMTTask_SerializeActors
 void FMTTask_SerializeActors::DoWork()
 {
@@ -20,16 +35,74 @@ void FMTTask_SerializeActors::DoWork()
 	{
 		SerializeGameInstance();
 	}
-
 	for (int32 I = 0; I < Num; ++I)
 	{
 		const AActor* const Actor = (*LevelActors)[StartIndex + I];
-		if (Actor && Filter.ShouldSave(Actor))
+
+		if (Cast<ALevelScriptActor>(Actor))
+		{
+			SerializeActor(Actor, LevelScriptRecord);
+		}
+		else if (Cast<AGameStateBase>(Actor)) 
+		{
+			SerializeActor(Actor, GameStateRecord);
+		}
+		else if (Cast<APlayerState>(Actor)) 
+		{
+			auto PlayerState = Cast<APlayerState>(Actor);
+			FPlayerStateRecord& PlayerStateRecord = PlayerStateRecords.AddDefaulted_GetRef();
+			// AI PlayerStates don't have a unique id
+			if (PlayerState->GetUniqueId().IsValid())
+			{
+				PlayerStateRecord.UniqueId = PlayerState->GetUniqueId().ToString();
+			}
+			else 
+			{
+				PlayerStateRecord.UniqueId = PlayerState->GetPlayerName();
+			}
+			SerializeActor(PlayerState, PlayerStateRecord);
+
+
+			auto pOwningController = PlayerState->GetOwningController();
+			if (pOwningController)
+			{
+				FPlayerControllerRecord& ControllerRecord = PlayerControllerRecords.AddDefaulted_GetRef();
+				ControllerRecord.UniqueId = PlayerStateRecord.UniqueId;
+				SerializeActor(pOwningController, ControllerRecord);
+			}
+		
+			auto Pawn = PlayerState->GetPawn();
+			if (Pawn)
+			{
+				FPlayerControlleredPawnRecord& PawnRecord = PlayerControlleredPawnRecords.AddDefaulted_GetRef();
+				PawnRecord.UniqueId = PlayerStateRecord.UniqueId;
+				SerializeActor(Pawn, PawnRecord);
+			}
+		}
+		else if (Actor && Filter.ShouldSave(Actor))
 		{
 			FActorRecord& Record = ActorRecords.AddDefaulted_GetRef();
 			SerializeActor(Actor, Record);
 		}
 	}
+}
+
+void FMTTask_SerializeActors::DumpData() 
+{
+	if (LevelScriptRecord.IsValid())
+	{
+		LevelRecord->LevelScript = LevelScriptRecord;
+	}
+
+	// Shrink not needed. Move wont keep reserved space
+	LevelRecord->Actors.Append(MoveTemp(ActorRecords));
+	if (GameStateRecord.IsValid())
+	{
+		SlotData->GameStateRecord = MoveTemp(GameStateRecord);
+	}
+	SlotData->PlayerControllerRecords.Append(MoveTemp(PlayerControllerRecords));
+	SlotData->PlayerStateRecords.Append(MoveTemp(PlayerStateRecords));
+	SlotData->PlayerControlleredPawnRecords.Append(MoveTemp(PlayerControlleredPawnRecords));
 }
 
 void FMTTask_SerializeActors::SerializeGameInstance()
@@ -101,11 +174,17 @@ bool FMTTask_SerializeActors::SerializeActor(const AActor* Actor, FActorRecord& 
 		SerializeActorComponents(Actor, Record, 1);
 	}
 
+
+	auto MutableActor = const_cast<AActor*>(Actor);
+	if (MutableActor)
+	{
+		MutableActor->GatherCurrentMovement();
+	}
 	TRACE_CPUPROFILER_EVENT_SCOPE(Serialize);
 	FMemoryWriter MemoryWriter(Record.Data, true);
 	FSEArchive Archive(MemoryWriter, false);
-	const_cast<AActor*>(Actor)->Serialize(Archive);
-
+	MutableActor->Serialize(Archive);
+	UE_LOG(LogSaveExtension, Log, TEXT("Serialize %s"), *Actor->GetName());
 	return true;
 }
 

@@ -18,4 +18,6 @@ public:
 	}
 
 	virtual FArchive& operator<<(UObject*& Obj) override;
+
+	bool IsObjectOwned(UObject*& Obj);
 };

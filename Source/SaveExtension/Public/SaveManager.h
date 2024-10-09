@@ -31,6 +31,10 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnGameSavedMCNative, USlotInfo*);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameLoadedMC, USlotInfo*, SlotInfo);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnGameLoadedMCNative, USlotInfo*);
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnOpenLevelBeforeLoadGameMC, const FString&, InMap, bool, bShouldHostingServer);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnOpenLevelBeforeLoadGameMCNative, const FString&, bool);
+
 struct FLatentActionInfo;
 
 USTRUCT(BlueprintType)
@@ -96,6 +100,7 @@ private:
 	UPROPERTY(Transient)
 	TArray<USlotDataTask*> Tasks;
 
+	bool bLoadSlotBegin = false;
 
 	/************************************************************************/
 	/* METHODS											     			    */
@@ -163,6 +168,7 @@ public:
 
 	/** Delete all saved slots from disk, loaded or not */
 	void DeleteAllSlots(FOnSlotsDeleted Delegate);
+
 
 
 	/** BLUEPRINT ONLY API */
@@ -257,7 +263,11 @@ public:
 		return ActivePreset;
 	}
 
-
+	UFUNCTION(BlueprintPure, Category = "SaveExtension")
+	FORCEINLINE bool BPIsLoadSlotBegin() const
+	{
+		return bLoadSlotBegin;
+	}
 	/** BLUEPRINTS & C++ API */
 public:
 
@@ -424,6 +434,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = SaveExtension)
 	FOnGameLoadedMC OnGameLoaded;
 	FOnGameLoadedMCNative OnGameLoadedNative;
+	UPROPERTY(BlueprintAssignable, Category = SaveExtension)
+	FOnOpenLevelBeforeLoadGameMC OnOpenLevelBeforeLoadGame;
+	FOnOpenLevelBeforeLoadGameMCNative OnOpenLevelBeforeLoadGameNative;
 
 	/** Subscribe to receive save and load events on an Interface */
 	UFUNCTION(Category = SaveExtension, BlueprintCallable)

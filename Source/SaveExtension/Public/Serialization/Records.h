@@ -7,9 +7,18 @@
 #include <Engine/LevelStreaming.h>
 #include <Engine/LevelScriptActor.h>
 
+#include <GameFramework/PlayerState.h>
+#include <GameFramework/PlayerController.h>
+#include <GameFramework/Pawn.h>
+#include <GameFramework/GameStateBase.h>
+
 #include "Records.generated.h"
 
+
+
+// SaveExtension
 class USlotData;
+
 
 
 USTRUCT()
@@ -102,4 +111,56 @@ struct FActorRecord : public FObjectRecord
 	FActorRecord(const AActor* Actor) : Super(Actor) {}
 
 	virtual bool Serialize(FArchive& Ar) override;
+};
+
+
+
+USTRUCT()
+struct FPlayerRecord : public FActorRecord
+{
+	GENERATED_BODY()
+
+
+	//FUniqueNetIdRepl UniqueId;
+	FString UniqueId;
+	FPlayerRecord() : Super() {}
+	FPlayerRecord(const AActor* Actor) : Super(Actor) {}
+	virtual ~FPlayerRecord() {}
+
+	virtual bool Serialize(FArchive& Ar) override;
+
+	FORCEINLINE bool operator==(const FString& InUniqueId) const
+	{
+		return UniqueId == InUniqueId;
+	}
+};
+
+USTRUCT()
+struct FPlayerStateRecord : public FPlayerRecord
+{
+	GENERATED_BODY()
+
+	FPlayerStateRecord() : Super() {}
+	FPlayerStateRecord(const APlayerState* Actor) : Super(Actor) {}
+};
+
+USTRUCT()
+struct FPlayerControllerRecord : public FPlayerRecord
+{
+	GENERATED_BODY()
+
+	FPlayerControllerRecord() : Super() {}
+	FPlayerControllerRecord(const AController* Actor) : Super(Actor) {}
+
+};
+
+
+USTRUCT()
+struct FPlayerControlleredPawnRecord : public FPlayerRecord
+{
+	GENERATED_BODY()
+
+	FPlayerControlleredPawnRecord() : Super() {}
+	FPlayerControlleredPawnRecord(const APawn* Actor) : Super(Actor) {}
+
 };

@@ -22,6 +22,18 @@ public class SaveExtension : ModuleRules
 			"ImageWrapper",
 			"NavigationSystem"
 		});
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			"CoreOnline",
+			"GameplayDebugger",
+			"GameplayAbilities",
+			"UMG"
+		});
+		// Engine.Plugin
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			"MassLOD",
+		});
 	}
 }
 

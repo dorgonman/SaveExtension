@@ -88,14 +88,14 @@ private:
 
 	/** Spawns Actors hat were saved but which actors are not in the world. */
 	void RespawnActors(const TArray<FActorRecord*>& Records, const ULevel* Level);
-
+	void RespawnAndDeserializeGameplayFramework() ;
 protected:
 
 	//~ Begin Files
 	void StartLoadingData();
 
 	USlotData* GetLoadedData() const;
-	FORCEINLINE const bool IsDataLoaded() const { return LoadDataTask && LoadDataTask->IsDone(); };
+	const bool IsDataLoaded() const;
 	//~ End Files
 
 
@@ -111,8 +111,8 @@ protected:
 
 	void FinishedDeserializing();
 
-	void PrepareAllLevels();
-	void PrepareLevel(const ULevel* Level, FLevelRecord& LevelRecord);
+	void PrepareAllLevels(bool bSkipGameplayFramework, bool bRespawnActor);
+	void PrepareLevel(const ULevel* Level, FLevelRecord& LevelRecord, bool bRespawnActor);
 
 	/** Deserializes all Level actors. */
 	void DeserializeLevel_Actor(AActor* const Actor, const FLevelRecord& LevelRecord, const FSELevelFilter& Filter);
@@ -131,4 +131,8 @@ private:
 	/** Deserializes the components of an actor from a provided Record */
 	void DeserializeActorComponents(AActor* Actor, const FActorRecord& ActorRecord, const FSELevelFilter& Filter, int8 indent = 0);
 	/** END Deserialization */
+
+	void Deserialize_RepNotify(UObject* InObject);
+	TArray<TWeakObjectPtr<UObject>> AllDeserializedObject;
+	//TArray<TWeakObjectPtr<AActor>> AllDeferredRespawnedActors;
 };

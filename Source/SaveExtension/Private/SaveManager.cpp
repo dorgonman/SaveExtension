@@ -21,7 +21,9 @@
 #include <Kismet/GameplayStatics.h>
 #include <Misc/CoreDelegates.h>
 #include <Misc/Paths.h>
-
+#include <WorldPartition/WorldPartitionSubsystem.h>
+// Core
+#include <Misc/OutputDeviceNull.h>
 
 USaveManager::USaveManager() : Super(), MTTasks{} {}
 
@@ -94,7 +96,7 @@ bool USaveManager::LoadSlot(FName SlotName, FOnGameLoaded OnLoaded)
 	{
 		return false;
 	}
-
+	bLoadSlotBegin = true;
 	TryInstantiateInfo();
 
 	auto* Task = CreateTask<USlotDataTask_Loader>()
@@ -442,7 +444,6 @@ void USaveManager::OnSaveFinished(const FSELevelFilter& Filter, const bool bErro
 void USaveManager::OnLoadBegan(const FSELevelFilter& Filter)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(USaveManager::OnLoadBegan);
-
 	IterateSubscribedInterfaces([&Filter](auto* Object)
 	{
 		check(Object->template Implements<USaveExtensionInterface>());
@@ -459,7 +460,7 @@ void USaveManager::OnLoadBegan(const FSELevelFilter& Filter)
 void USaveManager::OnLoadFinished(const FSELevelFilter& Filter, const bool bError)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(USaveManager::OnLoadFinished);
-
+	
 	IterateSubscribedInterfaces([&Filter, bError](auto* Object)
 	{
 		check(Object->template Implements<USaveExtensionInterface>());
@@ -477,6 +478,7 @@ void USaveManager::OnLoadFinished(const FSELevelFilter& Filter, const bool bErro
 		OnGameLoaded.Broadcast(CurrentInfo);
 		OnGameLoadedNative.Broadcast(CurrentInfo);
 	}
+	bLoadSlotBegin = false;
 }
 
 void USaveManager::OnMapLoadStarted(const FString& MapName)
@@ -486,13 +488,22 @@ void USaveManager::OnMapLoadStarted(const FString& MapName)
 
 void USaveManager::OnMapLoadFinished(UWorld* LoadedWorld)
 {
-	if(auto* ActiveLoader = Cast<USlotDataTask_Loader>(Tasks.Num() ? Tasks[0] : nullptr))
+	if (bLoadSlotBegin) 
 	{
-		ActiveLoader->OnMapLoaded();
-	}
+		if(auto* ActiveLoader = Cast<USlotDataTask_Loader>(Tasks.Num() ? Tasks[0] : nullptr))
+		{
+			auto pWorldPartitionSubsystem = GetWorld()->GetSubsystem<UWorldPartitionSubsystem>();
+			if (pWorldPartitionSubsystem) 
+			{
+				pWorldPartitionSubsystem->UpdateStreamingState();
+			}
+			ActiveLoader->OnMapLoaded();
+		}
 
-	UpdateLevelStreamings();
+		UpdateLevelStreamings();
+	}
 }
+
 
 UWorld* USaveManager::GetWorld() const
 {
