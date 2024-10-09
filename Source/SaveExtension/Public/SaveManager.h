@@ -100,6 +100,7 @@ private:
 	UPROPERTY(Transient)
 	TArray<USlotDataTask*> Tasks;
 
+	bool bLoadSlotBegin = false;
 
 	/************************************************************************/
 	/* METHODS											     			    */
@@ -167,6 +168,7 @@ public:
 
 	/** Delete all saved slots from disk, loaded or not */
 	void DeleteAllSlots(FOnSlotsDeleted Delegate);
+
 
 
 	/** BLUEPRINT ONLY API */
@@ -261,7 +263,11 @@ public:
 		return ActivePreset;
 	}
 
-
+	UFUNCTION(BlueprintPure, Category = "SaveExtension")
+	FORCEINLINE bool BPIsLoadSlotBegin() const
+	{
+		return bLoadSlotBegin;
+	}
 	/** BLUEPRINTS & C++ API */
 public:
 

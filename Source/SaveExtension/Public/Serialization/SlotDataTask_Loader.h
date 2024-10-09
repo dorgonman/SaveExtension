@@ -95,7 +95,7 @@ protected:
 	void StartLoadingData();
 
 	USlotData* GetLoadedData() const;
-	FORCEINLINE const bool IsDataLoaded() const { return LoadDataTask && LoadDataTask->IsDone(); };
+	const bool IsDataLoaded() const;
 	//~ End Files
 
 

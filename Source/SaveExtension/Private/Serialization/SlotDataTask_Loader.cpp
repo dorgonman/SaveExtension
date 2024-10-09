@@ -4,10 +4,14 @@
 
 #include <GameFramework/Character.h>
 #include <GameFramework/GameModeBase.h>
+#include <GameFramework/GameStateBase.h>
+#include "GameFramework/PlayerState.h"
+#include "GameFramework/PlayerController.h"
 #include <Serialization/MemoryReader.h>
 #include <Kismet/GameplayStatics.h>
 #include <Components/PrimitiveComponent.h>
 #include <UObject/UObjectGlobals.h>
+#include <Engine/AssetManager.h>
 
 #include "Misc/SlotHelpers.h"
 #include "SavePreset.h"
@@ -49,7 +53,6 @@ void USlotDataTask_Loader::OnStart()
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(USlotDataTask_Loader::OnStart);
 	USaveManager* Manager = GetManager();
-
 	SELog(Preset, "Loading from Slot " + SlotName.ToString());
 
 	NewSlotInfo = Manager->LoadInfo(SlotName);
@@ -98,10 +101,10 @@ void USlotDataTask_Loader::OnStart()
 		}
 		else
 		{
-			FString mapOption = FString::Printf(TEXT("LoadGame"));
+			FString mapOption = FString::Printf(TEXT("FromLoadGame"));
 			if (bIsHostingServer)
 			{
-				FString hostOption = FString::Printf(TEXT("listen?%s"), TEXT("FromHostMigration"));
+				FString hostOption = TEXT("listen");
 				if (!hostOption.IsEmpty())
 				{
 					mapOption = FString::Printf(TEXT("%s?%s"), *mapOption, *hostOption);
@@ -250,6 +253,33 @@ USlotData* USlotDataTask_Loader::GetLoadedData() const
 		return LoadDataTask->GetTask().GetData();
 	}
 	return nullptr;
+}
+
+const bool USlotDataTask_Loader::IsDataLoaded() const 
+{
+	bool bIsDone = false;
+	do 
+	{
+		if (!LoadDataTask) break;
+
+		if (!LoadDataTask->IsDone()) break;
+		if (!UAssetManager::GetStreamableManager().AreAllAsyncLoadsComplete())
+			break;
+		auto& streamingLevels = GetWorld()->GetStreamingLevels();
+		bool bAllLevelsLoaded = true;
+		for (auto& streamingLevel : streamingLevels)
+		{
+			if (!streamingLevel->IsLevelLoaded())
+			{
+				bAllLevelsLoaded = false;
+				break;
+			}
+		}
+		if (!bAllLevelsLoaded) break;
+		bIsDone = true;
+	} while (0);
+
+	return bIsDone;//LoadDataTask && LoadDataTask->IsDone();
 }
 
 void USlotDataTask_Loader::BeforeDeserialize()
@@ -429,11 +459,16 @@ void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& Level
 		ActorsToSpawn.Add(&Record);
 	}
 
-	TArray<AActor*> ActorsToDestroy{};
 	{
 		// O(M*Log(N))
 		for (AActor* const Actor : Level->Actors)
 		{
+			// skip GameStateBase, PlayeState and PlayerController
+			if (Actor && (Cast<AGameStateBase>(Actor) || Cast<APlayerState>(Actor) ||
+				 Cast<APlayerController>(Actor)))
+			{
+				continue;
+			}
 			// Remove records which actors do exist
 			const bool bFoundActorRecord = Loader::RemoveSingleRecordPtrSwap(ActorsToSpawn, Actor, false) > 0;
 
@@ -501,12 +536,22 @@ void USlotDataTask_Loader::RespawnActors(const TArray<FActorRecord*>& Records, c
 	for (auto* Record : Records)
 	{
 		SpawnInfo.Name = Record->Name;
-
+		// skip GameStateBase, PlayeState and PlayerController
+		if (Record->SoftClassPath.IsValid() &&
+			(Record->SoftClassPath.TryLoadClass<AGameStateBase>() ||
+			 Record->SoftClassPath.TryLoadClass<APlayerState>() ||
+			 Record->SoftClassPath.TryLoadClass<APlayerController>()))
+		{
+			continue;
+		}
 		auto* NewActor =
 			World->SpawnActor(Record->SoftClassPath.TryLoadClass<UObject>(), &Record->Transform, SpawnInfo);
-		
-		// We update the name on the record in case it changed
-		Record->Name = NewActor->GetFName();
+		ensure(NewActor);
+		if (NewActor) 
+		{
+			// We update the name on the record in case it changed
+			Record->Name = NewActor->GetFName();
+		}
 	}
 }
 
