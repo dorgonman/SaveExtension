@@ -86,17 +86,33 @@ void USlotDataTask_Loader::OnStart()
 			auto pGameMode = GetWorld()->GetAuthGameMode();
 			if (!pGameMode) break;
 			bIsHostingServer = (pGameMode->GetNetMode() == NM_DedicatedServer || 
-							    pGameMode->GetNetMode() == NM_ListenServer);
+							    pGameMode->GetNetMode() == NM_ListenServer || 
+								pGameMode->GetNetMode() == NM_Client);
 		} while (0);
-		if (bIsHostingServer) 
+
+
+		if (Manager->OnOpenLevelBeforeLoadGame.IsBound() || Manager->OnOpenLevelBeforeLoadGameNative.IsBound()) 
 		{
-			pWorld->ServerTravel(MapToOpen, false, false);
+			Manager->OnOpenLevelBeforeLoadGame.Broadcast(MapToOpen, bIsHostingServer);
+			Manager->OnOpenLevelBeforeLoadGameNative.Broadcast(MapToOpen, bIsHostingServer);
 		}
-		else 
+		else
 		{
-			UGameplayStatics::OpenLevel(this, FName{MapToOpen});
+			FString mapOption = FString::Printf(TEXT("LoadGame"));
+			if (bIsHostingServer)
+			{
+				FString hostOption = FString::Printf(TEXT("listen?%s"), TEXT("FromHostMigration"));
+				if (!hostOption.IsEmpty())
+				{
+					mapOption = FString::Printf(TEXT("%s?%s"), *mapOption, *hostOption);
+				}
+				UGameplayStatics::OpenLevel(this, FName{MapToOpen}, true, mapOption);
+			}
+			else
+			{
+				UGameplayStatics::OpenLevel(this, FName{MapToOpen}, true, mapOption);
+			}
 		}
-		//
 
 		SELog(Preset, "Slot '" + SlotName.ToString() + "' is recorded on another Map. Loading before charging slot.", FColor::White, false, 1);
 		return;
@@ -488,7 +504,7 @@ void USlotDataTask_Loader::RespawnActors(const TArray<FActorRecord*>& Records, c
 
 		auto* NewActor =
 			World->SpawnActor(Record->SoftClassPath.TryLoadClass<UObject>(), &Record->Transform, SpawnInfo);
-
+		
 		// We update the name on the record in case it changed
 		Record->Name = NewActor->GetFName();
 	}

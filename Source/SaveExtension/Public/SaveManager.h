@@ -31,6 +31,10 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnGameSavedMCNative, USlotInfo*);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameLoadedMC, USlotInfo*, SlotInfo);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnGameLoadedMCNative, USlotInfo*);
 
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnOpenLevelBeforeLoadGameMC, const FString&, InMap, bool, bShouldHostingServer);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnOpenLevelBeforeLoadGameMCNative, const FString&, bool);
+
 struct FLatentActionInfo;
 
 USTRUCT(BlueprintType)
@@ -424,6 +428,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = SaveExtension)
 	FOnGameLoadedMC OnGameLoaded;
 	FOnGameLoadedMCNative OnGameLoadedNative;
+	UPROPERTY(BlueprintAssignable, Category = SaveExtension)
+	FOnOpenLevelBeforeLoadGameMC OnOpenLevelBeforeLoadGame;
+	FOnOpenLevelBeforeLoadGameMCNative OnOpenLevelBeforeLoadGameNative;
 
 	/** Subscribe to receive save and load events on an Interface */
 	UFUNCTION(Category = SaveExtension, BlueprintCallable)
