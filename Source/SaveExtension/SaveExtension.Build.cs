@@ -22,6 +22,11 @@ public class SaveExtension : ModuleRules
 			"ImageWrapper",
 			"NavigationSystem"
 		});
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			"CoreOnline",
+			"GameplayDebugger",
+		});
 	}
 }
 

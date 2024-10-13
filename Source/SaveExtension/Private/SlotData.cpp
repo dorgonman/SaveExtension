@@ -30,6 +30,11 @@ void USlotData::Serialize(FArchive& Ar)
 	LevelFilterType->SerializeItem(Ar, &GeneralLevelFilter, nullptr);
 	MainLevel.Serialize(Ar);
 	Ar << SubLevels;
+	Ar << GameStateRecord;
+	Ar << PlayerStateRecords;
+	Ar << PlayerControllerRecords;
+	Ar << PlayerControlleredPawnRecords;
+
 }
 
 void USlotData::CleanRecords(bool bKeepSublevels)
@@ -42,4 +47,8 @@ void USlotData::CleanRecords(bool bKeepSublevels)
 	{
 		SubLevels.Empty();
 	}
+	GameStateRecord = {};
+	PlayerStateRecords.Empty();
+	PlayerControllerRecords.Empty();
+	PlayerControlleredPawnRecords.Empty();
 }

@@ -471,6 +471,36 @@ void USaveManager::OnLoadFinished(const FSELevelFilter& Filter, const bool bErro
 		ISaveExtensionInterface::Execute_ReceiveOnLoadFinished(Object, Filter, bError);
 	});
 
+	// a.ParallelAnimEvaluation
+	static IConsoleVariable* CVarParallelAnimEvaluation =
+		IConsoleManager::Get().FindConsoleVariable(TEXT("a.ParallelAnimEvaluation"));
+
+
+	bool bDefaultValue_ParallelAnimEvaluation = true;
+	if (CVarParallelAnimEvaluation) 
+	{
+		bDefaultValue_ParallelAnimEvaluation = CVarParallelAnimEvaluation->GetBool();
+		CVarParallelAnimEvaluation->Set(false);
+	}
+	//// a.ParallelAnimUpdate
+	//bool bDefaultValue_ParallelAnimUpdate = true;
+	//static IConsoleVariable* CVarParallelAnimUpdate =
+	//	IConsoleManager::Get().FindConsoleVariable(TEXT("a.ParallelAnimUpdate"));
+	//if (CVarParallelAnimUpdate) 
+	//{
+	//	bDefaultValue_ParallelAnimUpdate = CVarParallelAnimUpdate->GetBool();
+	//	CVarParallelAnimUpdate->Set(false);
+	//}
+
+	//GetWorld()->Tick(ELevelTick::LEVELTICK_All, FApp::GetDeltaTime());
+	//if (CVarParallelAnimEvaluation)
+	//{
+	//	CVarParallelAnimEvaluation->Set(bDefaultValue_ParallelAnimEvaluation);
+	//}
+	//if (CVarParallelAnimUpdate)
+	//{
+	//	CVarParallelAnimUpdate->Set(bDefaultValue_ParallelAnimUpdate);
+	//}
 	if (!bError)
 	{
 		OnGameLoaded.Broadcast(CurrentInfo);

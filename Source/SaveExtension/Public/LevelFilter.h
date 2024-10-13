@@ -62,24 +62,23 @@ public:
 
 	bool ShouldSave(const AActor* Actor) const
 	{
-		return ActorFilter.IsClassAllowed(Actor->GetClass());
+		return IsValid(Actor) && (Actor->GetIsReplicated() || ActorFilter.IsClassAllowed(Actor->GetClass()));
 	}
 
 	bool ShouldLoad(const AActor* Actor) const
 	{
-		return LoadActorFilter.IsClassAllowed(Actor->GetClass());
+		return IsValid(Actor) && (Actor->GetIsReplicated() || LoadActorFilter.IsClassAllowed(Actor->GetClass()));
 	}
 
 	bool ShouldSave(const UActorComponent* Component) const
 	{
-		return IsValid(Component)
-			&& ComponentFilter.IsClassAllowed(Component->GetClass());
+		return IsValid(Component) && (Component->GetIsReplicated() || ComponentFilter.IsClassAllowed(Component->GetClass()));
 	}
 
 	bool ShouldLoad(const UActorComponent* Component) const
 	{
-		return IsValid(Component)
-			&& LoadComponentFilter.IsClassAllowed(Component->GetClass());
+		return IsValid(Component) &&
+				(Component->GetIsReplicated() || LoadComponentFilter.IsClassAllowed(Component->GetClass()));
 	}
 
 	static bool StoresTransform(const UActorComponent* Component)

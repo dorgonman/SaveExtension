@@ -39,7 +39,10 @@ class FMTTask_SerializeActors : public FMTTask
 
 	FActorRecord LevelScriptRecord;
 	TArray<FActorRecord> ActorRecords;
-
+	FActorRecord GameStateRecord;
+	TArray<FPlayerStateRecord> PlayerStateRecords;
+	TArray<FPlayerControllerRecord> PlayerControllerRecords;
+	TArray<FPlayerControlleredPawnRecord> PlayerControlleredPawnRecords;
 
 public:
 	FMTTask_SerializeActors(const UWorld* World, USlotData* SlotData,
@@ -62,13 +65,7 @@ public:
 	void DoWork();
 
 	/** Called after task has completed to recover resulting information */
-	void DumpData() {
-		if (LevelScriptRecord.IsValid())
-			LevelRecord->LevelScript = LevelScriptRecord;
-
-		// Shrink not needed. Move wont keep reserved space
-		LevelRecord->Actors.Append(MoveTemp(ActorRecords));
-	}
+	void DumpData();
 
 	FORCEINLINE TStatId GetStatId() const
 	{

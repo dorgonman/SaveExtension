@@ -74,3 +74,10 @@ bool FActorRecord::Serialize(FArchive& Ar)
 	Ar << ComponentRecords;
 	return true;
 }
+
+bool FPlayerRecord::Serialize(FArchive& Ar) 
+{
+	Super::Serialize(Ar);
+	Ar << UniqueId;
+	return true;
+}

@@ -50,7 +50,10 @@ public:
 	FSELevelFilter GeneralLevelFilter;
 	FPersistentLevelRecord MainLevel;
 	TArray<FStreamingLevelRecord> SubLevels;
-
+	FActorRecord GameStateRecord;
+	TArray<FPlayerStateRecord> PlayerStateRecords;
+	TArray<FPlayerControllerRecord> PlayerControllerRecords;
+	TArray<FPlayerControlleredPawnRecord> PlayerControlleredPawnRecords;
 
 	void CleanRecords(bool bKeepSublevels);
 

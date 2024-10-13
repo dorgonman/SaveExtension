@@ -55,7 +55,7 @@ void USlotDataTask_Saver::OnStart()
 
 		SlotInfo = Manager->GetCurrentInfo();
 		SlotData = Manager->GetCurrentData();
-		SlotData->CleanRecords(true);
+		SlotData->CleanRecords(false);
 
 		check(SlotInfo && SlotData);
 
@@ -137,7 +137,7 @@ void USlotDataTask_Saver::OnFinish(bool bSuccess)
 	if (bSuccess)
 	{
 		// Clean serialization data
-		SlotData->CleanRecords(true);
+		SlotData->CleanRecords(false);
 
 		SELog(Preset, "Finished Saving", FColor::Green);
 	}
