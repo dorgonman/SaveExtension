@@ -92,7 +92,10 @@ void FMTTask_SerializeActors::DoWork()
 					bShouldSave = false;
 				}
 			}
-
+			else if (Cast<AWorldSettings>(Actor)) 
+			{
+				bShouldSave = false;
+			}
 			
 			if (bShouldSave) 
 			{
@@ -191,11 +194,17 @@ bool FMTTask_SerializeActors::SerializeActor(const AActor* Actor, FActorRecord& 
 		SerializeActorComponents(Actor, Record, 1);
 	}
 
+
+	auto MutableActor = const_cast<AActor*>(Actor);
+	if (MutableActor)
+	{
+		MutableActor->GatherCurrentMovement();
+	}
 	TRACE_CPUPROFILER_EVENT_SCOPE(Serialize);
 	FMemoryWriter MemoryWriter(Record.Data, true);
 	FSEArchive Archive(MemoryWriter, false);
-	const_cast<AActor*>(Actor)->Serialize(Archive);
-
+	MutableActor->Serialize(Archive);
+	UE_LOG(LogSaveExtension, Log, TEXT("Serialize %s"), *Actor->GetName());
 	return true;
 }
 

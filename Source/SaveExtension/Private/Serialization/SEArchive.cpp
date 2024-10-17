@@ -2,6 +2,7 @@
 
 #include "Serialization/SEArchive.h"
 #include <UObject/NoExportTypes.h>
+#include "ISaveExtension.h"
 
 
 /////////////////////////////////////////////////////
@@ -9,6 +10,7 @@
 
 FArchive& FSEArchive::operator<<(UObject*& Obj)
 {
+
 	if (IsLoading())
 	{
 		// Deserialize the path name to the object
@@ -63,6 +65,12 @@ FArchive& FSEArchive::operator<<(UObject*& Obj)
 			/*bool bIsLocallyOwned = false;
 			InnerArchive << bIsLocallyOwned;*/
 		}
+	}
+
+	if (Obj) 
+	{
+		UE_LOG(LogSaveExtension, Log, TEXT("FSEArchive::operator<< %s"), *Obj->GetName());
+	
 	}
 	return *this;
 }

@@ -131,4 +131,7 @@ private:
 	/** Deserializes the components of an actor from a provided Record */
 	void DeserializeActorComponents(AActor* Actor, const FActorRecord& ActorRecord, const FSELevelFilter& Filter, int8 indent = 0);
 	/** END Deserialization */
+
+	void Deserialize_RepNotify(UObject* InObject);
+	TArray<TWeakObjectPtr<UObject>> AllDeserializedObject;
 };

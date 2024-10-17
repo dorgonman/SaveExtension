@@ -18,6 +18,10 @@
 #include <Serialization/MemoryReader.h>
 #include <UObject/UObjectGlobals.h>
 #include <WorldPartition/DataLayer/WorldDataLayers.h>
+
+// Core
+#include <Misc/OutputDeviceNull.h>
+
 // GameplayDebugger
 #include <GameplayDebuggerCategoryReplicator.h>
 
@@ -97,11 +101,10 @@ void USlotDataTask_Loader::OnStart()
 		do
 		{
 			if (!pWorld) break;
-			auto pGameMode = GetWorld()->GetAuthGameMode();
-			if (!pGameMode) break;
-			bIsHostingServer = (pGameMode->GetNetMode() == NM_DedicatedServer || 
-							    pGameMode->GetNetMode() == NM_ListenServer || 
-								pGameMode->GetNetMode() == NM_Client);
+			ENetMode netMode = pWorld->GetNetMode();
+			bIsHostingServer = (netMode == NM_DedicatedServer || 
+							    netMode == NM_ListenServer || 
+								netMode == NM_Client);
 		} while (0);
 
 
@@ -168,6 +171,12 @@ void USlotDataTask_Loader::OnFinish(bool bSuccess)
 	{
 		SELog(Preset, "Finished Loading", FColor::Green);
 	}
+	for (auto& DeserializedObject : AllDeserializedObject)
+	{
+		Deserialize_RepNotify(DeserializedObject.Get());
+	}
+	AllDeserializedObject.Empty();
+
 
 	// Execute delegates
 	Delegate.ExecuteIfBound((bSuccess) ? NewSlotInfo : nullptr);
@@ -626,6 +635,12 @@ void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& Level
 
 			if (DeserializedPawn && DeserializedController)
 			{
+				// Hotfix Serialization Children
+				auto OldControlleredPawn = DeserializedController->GetPawn();
+				if (OldControlleredPawn) 
+				{
+					DeserializedController->Children.AddUnique(OldControlleredPawn);
+				}
 				//if (!IsValid(DeserializedController->GetPawn()) ||
 				//	(DeserializedController->GetPawn()->GetName() != DeserializedPawn->GetName()))
 				//{
@@ -799,6 +814,9 @@ bool USlotDataTask_Loader::DeserializeActor(AActor* Actor, const FActorRecord& R
 		FMemoryReader MemoryReader(Record.Data, true);
 		FSEArchive Archive(MemoryReader, false);
 		Actor->Serialize(Archive);
+		UE_LOG(LogSaveExtension, Log, TEXT("DeserializeActor %s"), *Actor->GetName());
+		AllDeserializedObject.AddUnique(Actor);
+		//Deserialize_RepNotify(Actor);
 	}
 
 	return true;
@@ -845,9 +863,41 @@ void USlotDataTask_Loader::DeserializeActorComponents(AActor* Actor, const FActo
 				FMemoryReader MemoryReader(Record->Data, true);
 				FSEArchive Archive(MemoryReader, false);
 				Component->Serialize(Archive);
+				UE_LOG(LogSaveExtension, Log, TEXT("DeserializeActorComponent %s.%s"), 
+					*Component->GetOwner()->GetName(), *Component->GetName());
+				AllDeserializedObject.AddUnique(Component);
+			}
+			
+		}
+	}
+}
+
+void USlotDataTask_Loader::Deserialize_RepNotify(UObject* InObject)
+{
+	ensure(InObject);
+	if (InObject) 
+	{
+		auto MutableActor =Cast<AActor>(InObject);
+		if (MutableActor)
+		{
+			MutableActor->GatherCurrentMovement();
+		}
+		for (TFieldIterator<FProperty> PropIt(InObject->GetClass(), EFieldIteratorFlags::IncludeSuper);
+			 PropIt; ++PropIt)
+		{
+			FProperty* Property = *PropIt;
+			if (Property->HasAnyPropertyFlags(CPF_RepNotify))
+			{
+				//if (!(Property->RepNotifyFunc == TEXT("OnRep_AttachmentReplication"))) 
+				{
+					FOutputDeviceNull ar;
+					bool bSuccess = InObject->CallFunctionByNameWithArguments(
+						*Property->RepNotifyFunc.ToString(), ar, NULL, true);
+				}
 			}
 		}
 	}
+	
 }
 
 void USlotDataTask_Loader::FindNextAsyncLevel(ULevelStreaming*& OutLevelStreaming) const
