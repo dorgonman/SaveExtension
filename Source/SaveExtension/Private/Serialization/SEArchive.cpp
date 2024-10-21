@@ -67,7 +67,7 @@ FArchive& FSEArchive::operator<<(UObject*& Obj)
 			// Serialize the fully qualified object name
 			FString SavedString{ Obj->GetPathName() };
 			InnerArchive << SavedString;
-
+			// if Object is owned by another Object, serialize it
 			bool bIsLocallyOwned = IsObjectOwned(Obj);
 			InnerArchive << bIsLocallyOwned;
 			if (bIsLocallyOwned)
@@ -83,8 +83,8 @@ FArchive& FSEArchive::operator<<(UObject*& Obj)
 			FString SavedString{ "" };
 			InnerArchive << SavedString;
 
-			//bool bIsLocallyOwned = false;
-			//InnerArchive << bIsLocallyOwned;
+			bool bIsLocallyOwned = false;
+			InnerArchive << bIsLocallyOwned;
 		}
 	}
 
@@ -98,5 +98,10 @@ FArchive& FSEArchive::operator<<(UObject*& Obj)
 
 bool FSEArchive::IsObjectOwned(UObject*& Obj) 
 {
-	return Cast<UAttributeSet>(Obj) != nullptr;//(Cast<AActor>(Obj) || Cast<UActorComponent>(Obj));
+	return !(Cast<AActor>(Obj) || 
+			 Cast<UActorComponent>(Obj) || 
+			 Cast<UBlueprintGeneratedClass>(Obj) ||
+			 Cast<UClass>(Obj));
+	// Currently only support AttributeSet
+	//return Cast<UAttributeSet>(Obj) != nullptr;
 }
