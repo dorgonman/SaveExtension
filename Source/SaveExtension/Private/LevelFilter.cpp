@@ -1,15 +1,18 @@
 // Copyright 2015-2020 Piperift. All Rights Reserved.
 
 #include "LevelFilter.h"
-#include <GameFramework/PlayerState.h>
-#include <GameFramework/GameStateBase.h>
-#include <GameFramework/PlayerController.h>
-#include <GameFramework/Pawn.h>
-#include <GameFramework/GameSession.h>
 #include <GameFramework/GameModeBase.h>
+#include <GameFramework/GameSession.h>
+#include <GameFramework/GameStateBase.h>
+#include <GameFramework/Pawn.h>
+#include <GameFramework/PlayerController.h>
+#include <GameFramework/PlayerState.h>
+#include <WorldPartition/DataLayer/WorldDataLayers.h>
+#include <WorldPartition/WorldPartitionReplay.h>
 
 // GameplayDebugger
 #include <GameplayDebuggerCategoryReplicator.h>
+
 
 
 
@@ -50,6 +53,14 @@ bool FSELevelFilter::ShouldSave(const AActor* Actor) const
 	{
 		bResult = false;
 	}
+	else if (Cast<AWorldPartitionReplay>(Actor)) 
+	{
+		bResult = false;
+	}
+	else if (Cast<AWorldDataLayers>(Actor)) 
+	{
+		bResult = false;
+	}
 	return bResult;
 }
 
@@ -84,7 +95,14 @@ bool FSELevelFilter::ShouldLoad(const AActor* Actor) const
 	{
 		bResult = false;
 	}
-
+	else if (Cast<AWorldPartitionReplay>(Actor))
+	{
+		bResult = false;
+	}
+	else if (Cast<AWorldDataLayers>(Actor))
+	{
+		bResult = false;
+	}
 	
 	return bResult;
 }

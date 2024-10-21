@@ -26,7 +26,10 @@ public class SaveExtension : ModuleRules
 		{
 			"CoreOnline",
 			"GameplayDebugger",
+			"GameplayAbilities",
+			"UMG"
 		});
+
 	}
 }
 

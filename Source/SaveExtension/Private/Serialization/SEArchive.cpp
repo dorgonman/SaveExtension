@@ -3,6 +3,11 @@
 #include "Serialization/SEArchive.h"
 #include <UObject/NoExportTypes.h>
 #include "ISaveExtension.h"
+// GameplayAbilities
+#include "AttributeSet.h"
+
+// SaveExtension
+#include "Serialization/Records.h"
 
 
 /////////////////////////////////////////////////////
@@ -35,12 +40,25 @@ FArchive& FSEArchive::operator<<(UObject*& Obj)
 		}
 
 		// Only serialize owned Objects
-		/*bool bIsLocallyOwned;
+		bool bIsLocallyOwned;
 		InnerArchive << bIsLocallyOwned;
+		if (bIsLocallyOwned) 
+		{
+			FString AssetPath;
+			InnerArchive << AssetPath;
+			FSoftClassPath ClassPath(AssetPath);
+			UObject* ResolvedOuter;
+			FString ResolvedObjName = ObjectPath;
+			ResolveName(ResolvedOuter, ResolvedObjName, true, true, false, nullptr);
+	
+			UClass* Class = ClassPath.TryLoadClass<UObject>();
+			Obj = NewObject<UObject>(ResolvedOuter, Class, *ResolvedObjName);
+		}
+
 		if (Obj && bIsLocallyOwned)
 		{
 			Obj->Serialize(*this);
-		}*/
+		}
 	}
 	else
 	{
@@ -50,20 +68,23 @@ FArchive& FSEArchive::operator<<(UObject*& Obj)
 			FString SavedString{ Obj->GetPathName() };
 			InnerArchive << SavedString;
 
-			/*bool bIsLocallyOwned = IsObjectOwned(Obj);
+			bool bIsLocallyOwned = IsObjectOwned(Obj);
 			InnerArchive << bIsLocallyOwned;
 			if (bIsLocallyOwned)
 			{
+				FSoftClassPath ClassPath(Obj->GetClass());
+				FString AssetPath = ClassPath.GetAssetPathString();
+				InnerArchive << AssetPath;
 				Obj->Serialize(*this);
-			}*/
+			}
 		}
 		else
 		{
 			FString SavedString{ "" };
 			InnerArchive << SavedString;
 
-			/*bool bIsLocallyOwned = false;
-			InnerArchive << bIsLocallyOwned;*/
+			//bool bIsLocallyOwned = false;
+			//InnerArchive << bIsLocallyOwned;
 		}
 	}
 
@@ -73,4 +94,9 @@ FArchive& FSEArchive::operator<<(UObject*& Obj)
 	
 	}
 	return *this;
+}
+
+bool FSEArchive::IsObjectOwned(UObject*& Obj) 
+{
+	return Cast<UAttributeSet>(Obj) != nullptr;//(Cast<AActor>(Obj) || Cast<UActorComponent>(Obj));
 }

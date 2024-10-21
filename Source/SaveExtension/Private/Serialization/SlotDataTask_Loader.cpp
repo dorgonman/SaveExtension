@@ -19,6 +19,9 @@
 #include <UObject/UObjectGlobals.h>
 #include <WorldPartition/DataLayer/WorldDataLayers.h>
 
+// UMG
+#include <Blueprint/UserWidget.h>
+
 // Core
 #include <Misc/OutputDeviceNull.h>
 
@@ -181,17 +184,6 @@ void USlotDataTask_Loader::OnFinish(bool bSuccess)
 	}
 	AllDeserializedObject.Empty();
 
-
-	/*for (auto Actor : AllDeferredRespawnedActors)
-	{
-		ensure(Actor.IsValid());
-		if (Actor.IsValid())
-		{
-			Actor->FinishSpawning(Actor->GetTransform());
-		}
-	}
-	AllDeferredRespawnedActors.Empty();*/
-
 	// Execute delegates
 	Delegate.ExecuteIfBound((bSuccess) ? NewSlotInfo : nullptr);
 
@@ -199,6 +191,13 @@ void USlotDataTask_Loader::OnFinish(bool bSuccess)
 		SlotData? GetGeneralFilter() : FSELevelFilter{},
 		!bSuccess
 	);
+
+
+	for ( TObjectIterator<UUserWidget> Itr; Itr; ++Itr ) 
+	{
+		Itr->SynchronizeProperties();
+	}
+	//GEngine->ForceGarbageCollection(false);
 }
 
 void USlotDataTask_Loader::BeginDestroy()
@@ -695,6 +694,11 @@ void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& Level
 
 void USlotDataTask_Loader::FinishedDeserializing()
 {
+
+
+	// Clear Dynamically spawn actor in respawned Actors's BeginPlay
+	PrepareAllLevels();
+
 	// Clean serialization data
 	SlotData->CleanRecords(false);
 	GetManager()->__SetCurrentData(SlotData);
@@ -730,6 +734,7 @@ void USlotDataTask_Loader::PrepareAllLevels()
 void USlotDataTask_Loader::RespawnActors(const TArray<FActorRecord*>& Records, const ULevel* Level)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(USlotDataTask_Loader::RespawnActors);
+	if (Records.Num() == 0) return;
 
 	FActorSpawnParameters SpawnInfo{};
 	SpawnInfo.OverrideLevel = const_cast<ULevel*>(Level);
