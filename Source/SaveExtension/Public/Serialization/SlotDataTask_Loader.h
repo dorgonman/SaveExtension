@@ -134,4 +134,5 @@ private:
 
 	void Deserialize_RepNotify(UObject* InObject);
 	TArray<TWeakObjectPtr<UObject>> AllDeserializedObject;
+	//TArray<TWeakObjectPtr<AActor>> AllDeferredRespawnedActors;
 };

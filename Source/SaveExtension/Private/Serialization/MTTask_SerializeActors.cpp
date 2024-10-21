@@ -10,11 +10,17 @@
 #include <GameFramework/GameSession.h>
 #include <GameFramework/GameModeBase.h>
 
+// GameplayDebugger
+#include <GameplayDebuggerCategoryReplicator.h>
+
+// SaveExtension
 #include "SaveManager.h"
 #include "SlotInfo.h"
 #include "SlotData.h"
 #include "SavePreset.h"
 #include "Serialization/SEArchive.h"
+
+
 
 
 
@@ -73,36 +79,8 @@ void FMTTask_SerializeActors::DoWork()
 		}
 		else if (Actor && Filter.ShouldSave(Actor))
 		{
-			bool bShouldSave = true;
-
-			// Skip Controller and Pawn if they have a PlayerState, should be handled by PlayerState
-			if (Cast<AController>(Actor)) 
-			{
-				auto pController = Cast<AController>(Actor);
-				if (pController->PlayerState)
-				{
-					bShouldSave = false;
-				}
-			}
-			else if (Cast<APawn>(Actor))
-			{
-				auto pPawn = Cast<APawn>(Actor);
-				if (pPawn->GetPlayerState())
-				{
-					bShouldSave = false;
-				}
-			}
-			else if (Cast<AWorldSettings>(Actor)) 
-			{
-				bShouldSave = false;
-			}
-			
-			if (bShouldSave) 
-			{
-				FActorRecord& Record = ActorRecords.AddDefaulted_GetRef();
-				SerializeActor(Actor, Record);
-			}
-
+			FActorRecord& Record = ActorRecords.AddDefaulted_GetRef();
+			SerializeActor(Actor, Record);
 		}
 	}
 }

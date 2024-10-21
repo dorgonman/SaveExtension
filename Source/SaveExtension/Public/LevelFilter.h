@@ -60,15 +60,10 @@ public:
 		LoadComponentFilter.BakeAllowedClasses();
 	}
 
-	bool ShouldSave(const AActor* Actor) const
-	{
-		return IsValid(Actor) && (Actor->GetIsReplicated() || ActorFilter.IsClassAllowed(Actor->GetClass()));
-	}
+	bool ShouldSave(const AActor* Actor) const;
+	
+	bool ShouldLoad(const AActor* Actor) const;
 
-	bool ShouldLoad(const AActor* Actor) const
-	{
-		return IsValid(Actor) && (Actor->GetIsReplicated() || LoadActorFilter.IsClassAllowed(Actor->GetClass()));
-	}
 
 	bool ShouldSave(const UActorComponent* Component) const
 	{

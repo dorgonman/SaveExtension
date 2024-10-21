@@ -171,12 +171,26 @@ void USlotDataTask_Loader::OnFinish(bool bSuccess)
 	{
 		SELog(Preset, "Finished Loading", FColor::Green);
 	}
+
+
+
+	//PrepareAllLevels();
 	for (auto& DeserializedObject : AllDeserializedObject)
 	{
 		Deserialize_RepNotify(DeserializedObject.Get());
 	}
 	AllDeserializedObject.Empty();
 
+
+	/*for (auto Actor : AllDeferredRespawnedActors)
+	{
+		ensure(Actor.IsValid());
+		if (Actor.IsValid())
+		{
+			Actor->FinishSpawning(Actor->GetTransform());
+		}
+	}
+	AllDeferredRespawnedActors.Empty();*/
 
 	// Execute delegates
 	Delegate.ExecuteIfBound((bSuccess) ? NewSlotInfo : nullptr);
@@ -361,7 +375,7 @@ void USlotDataTask_Loader::DeserializeLevelSync(const ULevel* Level, const ULeve
 		for (auto ActorItr = Level->Actors.CreateConstIterator(); ActorItr; ++ActorItr)
 		{
 			TObjectPtr<AActor> Actor = *ActorItr;
-			if (IsValid(Actor) && Filter.ShouldSave(Actor))
+			if (IsValid(Actor) && Filter.ShouldLoad(Actor))
 			{
 				DeserializeLevel_Actor(Actor, *LevelRecord, Filter);
 			}
@@ -536,6 +550,7 @@ void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& Level
 		FActorSpawnParameters SpawnInfo{};
 		SpawnInfo.OverrideLevel = const_cast<ULevel*>(Level);
 		SpawnInfo.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Requested;
+		//SpawnInfo.bDeferConstruction = true;
 		// Respawn PlayerState and PlayerController
 		for (auto& PlayerStateRecord : SlotData->PlayerStateRecords)
 		{
@@ -560,6 +575,7 @@ void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& Level
 					GetWorld()->SpawnActor(PlayerStateRecord.SoftClassPath.TryLoadClass<APlayerState>(),
 						&PlayerStateRecord.Transform, SpawnInfo));
 				ensure(DeserializedPlayerState);
+				//AllDeferredRespawnedActors.Add(DeserializedPlayerState);
 			}
 			AController* DeserializedController = nullptr;
 
@@ -586,6 +602,7 @@ void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& Level
 						PlayerControllerRecord->SoftClassPath.TryLoadClass<AController>(),
 						&PlayerControllerRecord->Transform, SpawnInfo));
 					ensure(DeserializedController);
+					//AllDeferredRespawnedActors.Add(DeserializedController);
 				}
 			}
 
@@ -614,6 +631,7 @@ void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& Level
 						PlayerControlleredPawnRecord->SoftClassPath.TryLoadClass<APawn>(),
 						&PlayerControlleredPawnRecord->Transform, SpawnInfo));
 					ensure(DeserializedPawn);
+					//AllDeferredRespawnedActors.Add(DeserializedPawn);
 				}
 			}
 
@@ -665,8 +683,12 @@ void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& Level
 				*SlotData->GameStateRecord.Name.ToString(), ExistingGameState->GetOuter()));
 			DeserializeActor(ExistingGameState, SlotData->GameStateRecord, Filter);
 		}
-		auto pLevelScriptActor = GetWorld()->GetCurrentLevel()->GetLevelScriptActor();
-		DeserializeActor(pLevelScriptActor, LevelRecord.LevelScript, Filter);
+		if (LevelRecord.LevelScript.IsValid()) 
+		{
+			auto pLevelScriptActor = GetWorld()->GetCurrentLevel()->GetLevelScriptActor();
+			DeserializeActor(pLevelScriptActor, LevelRecord.LevelScript, Filter);
+		}
+
 	}
 	
 }
@@ -713,6 +735,7 @@ void USlotDataTask_Loader::RespawnActors(const TArray<FActorRecord*>& Records, c
 	SpawnInfo.OverrideLevel = const_cast<ULevel*>(Level);
 	SpawnInfo.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Requested;
 	SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	//SpawnInfo.bDeferConstruction = true;
 	UWorld* World = GetWorld();
 	ULevel* MutableLevel = const_cast<ULevel*>(Level);
 
@@ -728,6 +751,7 @@ void USlotDataTask_Loader::RespawnActors(const TArray<FActorRecord*>& Records, c
 		{
 			// We update the name on the record in case it changed
 			Record->Name = NewActor->GetFName();
+			//AllDeferredRespawnedActors.Add(NewActor);
 		}
 		//if (MutableLevel && World->GetCurrentLevel() == MutableLevel) 
 		{
@@ -880,20 +904,18 @@ void USlotDataTask_Loader::Deserialize_RepNotify(UObject* InObject)
 		auto MutableActor =Cast<AActor>(InObject);
 		if (MutableActor)
 		{
-			MutableActor->GatherCurrentMovement();
+			UNetDriver* NetDriver = GEngine->FindNamedNetDriver(GetWorld(), NAME_GameNetDriver);
+			MutableActor->CallPreReplication(NetDriver);
 		}
 		for (TFieldIterator<FProperty> PropIt(InObject->GetClass(), EFieldIteratorFlags::IncludeSuper);
 			 PropIt; ++PropIt)
 		{
 			FProperty* Property = *PropIt;
 			if (Property->HasAnyPropertyFlags(CPF_RepNotify))
-			{
-				//if (!(Property->RepNotifyFunc == TEXT("OnRep_AttachmentReplication"))) 
-				{
-					FOutputDeviceNull ar;
-					bool bSuccess = InObject->CallFunctionByNameWithArguments(
-						*Property->RepNotifyFunc.ToString(), ar, NULL, true);
-				}
+			{	
+				FOutputDeviceNull ar;
+				bool bSuccess = InObject->CallFunctionByNameWithArguments(
+					*Property->RepNotifyFunc.ToString(), ar, NULL, true);			
 			}
 		}
 	}
