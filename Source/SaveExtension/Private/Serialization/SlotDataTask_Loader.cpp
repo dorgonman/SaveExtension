@@ -6,7 +6,7 @@
 #include <Components/PrimitiveComponent.h>
 #include <Engine/AssetManager.h>
 #include <GameFramework/Character.h>
-#include <GameFramework/GameModeBase.h>
+#include <GameFramework/GameMode.h>
 #include <GameFramework/GameSession.h>
 #include <GameFramework/GameStateBase.h>
 #include <GameFramework/HUD.h>
@@ -32,6 +32,7 @@
 #include "SavePreset.h"
 #include "SaveManager.h"
 #include "Serialization/SEArchive.h"
+
 
 
 
@@ -177,10 +178,13 @@ void USlotDataTask_Loader::OnFinish(bool bSuccess)
 
 
 
-	//PrepareAllLevels();
-	for (auto& DeserializedObject : AllDeserializedObject)
+	PrepareAllLevels(true, false);
+	for (int32 i = 0; i < AllDeserializedObject.Num(); ++i) 
 	{
-		Deserialize_RepNotify(DeserializedObject.Get());
+		if (AllDeserializedObject[i].IsValid()) 
+		{
+			Deserialize_RepNotify(AllDeserializedObject[i].Get());
+		}
 	}
 	AllDeserializedObject.Empty();
 
@@ -338,7 +342,7 @@ void USlotDataTask_Loader::DeserializeSync()
 
 	SELog(Preset, "World '" + World->GetName() + "'", FColor::Green, false, 1);
 
-	PrepareAllLevels();
+	PrepareAllLevels(false, true);
 
 	// Deserialize world
 	{
@@ -388,7 +392,7 @@ void USlotDataTask_Loader::DeserializeASync()
 	{
 		SELog(Preset, "World '" + GetWorld()->GetName() + "'", FColor::Green, false, 1);
 
-		PrepareAllLevels();
+		PrepareAllLevels(false, true);
 		DeserializeLevelASync(GetWorld()->GetCurrentLevel());
 	}
 }
@@ -474,7 +478,7 @@ void USlotDataTask_Loader::DeserializeASyncLoop(float StartMS)
 	FinishedDeserializing();
 }
 
-void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& LevelRecord)
+void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& LevelRecord, bool bRespawnActor)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(USlotDataTask_Loader::PrepareLevel);
 
@@ -491,9 +495,6 @@ void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& Level
 	{
 		ActorsToSpawn.Add(&Record);
 	}
-	AGameStateBase* ExistingGameState = nullptr;
-
-	TArray<APlayerState*> PlayerStates;
 	{
 		// O(M*Log(N))
 		for (AActor* const Actor : Level->Actors)
@@ -504,14 +505,6 @@ void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& Level
 						  Cast<ALevelScriptActor>(Actor) ) ||
 						  Cast<AController>(Actor))
 			{
-				if (auto pGameState = Cast<AGameStateBase>(Actor))
-				{
-					ExistingGameState = pGameState;
-				}
-				else if (auto pPlayerState = Cast<APlayerState>(Actor))
-				{
-					PlayerStates.Add(pPlayerState);
-				}
 				continue;
 			}
 
@@ -540,164 +533,16 @@ void USlotDataTask_Loader::PrepareLevel(const ULevel* Level, FLevelRecord& Level
 	}
 
 	// Create Actors that doesn't exist now but were saved
-	RespawnActors(ActorsToSpawn, Level);
-
-
-	if (GetWorld()->GetCurrentLevel() == Level)
+	if (bRespawnActor) 
 	{
-
-		FActorSpawnParameters SpawnInfo{};
-		SpawnInfo.OverrideLevel = const_cast<ULevel*>(Level);
-		SpawnInfo.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Requested;
-		//SpawnInfo.bDeferConstruction = true;
-		// Respawn PlayerState and PlayerController
-		for (auto& PlayerStateRecord : SlotData->PlayerStateRecords)
-		{
-			bool bActivePlayerState = false;
-			APlayerState* DeserializedPlayerState = nullptr;
-			for (APlayerState* PlayerState : PlayerStates)
-			{
-				if (PlayerStateRecord.UniqueId == PlayerState->GetUniqueId().ToString())
-				{
-					DeserializedPlayerState = PlayerState;
-					bActivePlayerState = true;
-					// DeserializeActor(PlayerState, PlayerStateRecord, Filter);
-					ensure(DeserializedPlayerState->Rename(
-						*PlayerStateRecord.Name.ToString(), DeserializedPlayerState->GetOuter()));
-					break;
-				}
-			}
-			if (!DeserializedPlayerState)
-			{
-				SpawnInfo.Name = PlayerStateRecord.Name;
-				DeserializedPlayerState = Cast<APlayerState>(
-					GetWorld()->SpawnActor(PlayerStateRecord.SoftClassPath.TryLoadClass<APlayerState>(),
-						&PlayerStateRecord.Transform, SpawnInfo));
-				ensure(DeserializedPlayerState);
-				//AllDeferredRespawnedActors.Add(DeserializedPlayerState);
-			}
-			AController* DeserializedController = nullptr;
-
-			if (DeserializedPlayerState)
-			{
-				DeserializedController = DeserializedPlayerState->GetOwningController();
-			}
-
-
-			FPlayerControllerRecord* PlayerControllerRecord =
-				SlotData->PlayerControllerRecords.FindByKey(PlayerStateRecord.UniqueId);
-			ensure(PlayerControllerRecord);
-			if (PlayerControllerRecord)
-			{
-				if (DeserializedController)
-				{
-					ensure(DeserializedController->Rename(
-						*PlayerControllerRecord->Name.ToString(), DeserializedController->GetOuter()));
-				}
-				else
-				{
-					SpawnInfo.Name = PlayerControllerRecord->Name;
-					DeserializedController = Cast<AController>(GetWorld()->SpawnActor(
-						PlayerControllerRecord->SoftClassPath.TryLoadClass<AController>(),
-						&PlayerControllerRecord->Transform, SpawnInfo));
-					ensure(DeserializedController);
-					//AllDeferredRespawnedActors.Add(DeserializedController);
-				}
-			}
-
-			APawn* DeserializedPawn = nullptr;
-			if (DeserializedController)
-			{
-				DeserializedPawn = DeserializedController->GetPawn();
-			}
-			FPlayerControlleredPawnRecord* PlayerControlleredPawnRecord =
-				SlotData->PlayerControlleredPawnRecords.FindByKey(PlayerStateRecord.UniqueId);
-			ensure(PlayerControlleredPawnRecord);
-			if (PlayerControlleredPawnRecord)
-			{
-				if (DeserializedPawn)
-				{
-					if (DeserializedPawn->GetFName() != PlayerControlleredPawnRecord->Name) 
-					{
-						ensure(DeserializedPawn->Rename(
-							*PlayerControlleredPawnRecord->Name.ToString(), DeserializedPawn->GetOuter()));
-					}
-				}
-				else
-				{
-					SpawnInfo.Name = PlayerControlleredPawnRecord->Name;
-					DeserializedPawn = Cast<APawn>(GetWorld()->SpawnActor(
-						PlayerControlleredPawnRecord->SoftClassPath.TryLoadClass<APawn>(),
-						&PlayerControlleredPawnRecord->Transform, SpawnInfo));
-					ensure(DeserializedPawn);
-					//AllDeferredRespawnedActors.Add(DeserializedPawn);
-				}
-			}
-
-
-			if (DeserializedPlayerState)
-			{
-				DeserializeActor(DeserializedPlayerState, PlayerStateRecord, Filter);
-			}
-
-			if (DeserializedController && PlayerControllerRecord)
-			{
-				DeserializeActor(DeserializedController, *PlayerControllerRecord, Filter);
-			}
-
-			if (DeserializedPawn && PlayerControlleredPawnRecord)
-			{
-				DeserializeActor(DeserializedPawn, *PlayerControlleredPawnRecord, Filter);
-			}
-
-			if (DeserializedPawn && DeserializedController)
-			{
-				// Hotfix Serialization Children
-				auto OldControlleredPawn = DeserializedController->GetPawn();
-				if (OldControlleredPawn) 
-				{
-					DeserializedController->Children.AddUnique(OldControlleredPawn);
-				}
-				//if (!IsValid(DeserializedController->GetPawn()) ||
-				//	(DeserializedController->GetPawn()->GetName() != DeserializedPawn->GetName()))
-				//{
-					DeserializedController->Possess(DeserializedPawn);
-				//}	
-			}
-			if (!bActivePlayerState)
-			{
-				// Mark controller and Associaed PlayerState for destruction,
-				// it will call AGameMode::AddInactivePlayer eventually
-				// so rejoined players can be repossessed
-				DeserializedController->Destroy();
-			}
-
-
-		}
-
-		ensure(ExistingGameState);
-		if (ExistingGameState)
-		{
-			ensure(ExistingGameState->Rename(
-				*SlotData->GameStateRecord.Name.ToString(), ExistingGameState->GetOuter()));
-			DeserializeActor(ExistingGameState, SlotData->GameStateRecord, Filter);
-		}
-		if (LevelRecord.LevelScript.IsValid()) 
-		{
-			auto pLevelScriptActor = GetWorld()->GetCurrentLevel()->GetLevelScriptActor();
-			DeserializeActor(pLevelScriptActor, LevelRecord.LevelScript, Filter);
-		}
-
+		RespawnActors(ActorsToSpawn, Level);
 	}
-	
 }
 
 void USlotDataTask_Loader::FinishedDeserializing()
 {
-
-
 	// Clear Dynamically spawn actor in respawned Actors's BeginPlay
-	PrepareAllLevels();
+	//PrepareAllLevels();
 
 	// Clean serialization data
 	SlotData->CleanRecords(false);
@@ -706,7 +551,7 @@ void USlotDataTask_Loader::FinishedDeserializing()
 	Finish(true);
 }
 
-void USlotDataTask_Loader::PrepareAllLevels()
+void USlotDataTask_Loader::PrepareAllLevels(bool bSkipGameplayFramework, bool bRespawnActor)
 {
 	TRACE_CPUPROFILER_EVENT_SCOPE(USlotDataTask_Loader::PrepareAllLevels);
 
@@ -714,7 +559,7 @@ void USlotDataTask_Loader::PrepareAllLevels()
 	check(World);
 
 	// Prepare Main level
-	PrepareLevel(World->GetCurrentLevel(), SlotData->MainLevel);
+	PrepareLevel(World->GetCurrentLevel(), SlotData->MainLevel, bRespawnActor);
 
 	// Prepare other loaded sub-levels
 	const TArray<ULevelStreaming*>& Levels = World->GetStreamingLevels();
@@ -725,10 +570,16 @@ void USlotDataTask_Loader::PrepareAllLevels()
 			FLevelRecord* LevelRecord = FindLevelRecord(Level);
 			if (LevelRecord)
 			{
-				PrepareLevel(Level->GetLoadedLevel(), *LevelRecord);
+				PrepareLevel(Level->GetLoadedLevel(), *LevelRecord, bRespawnActor);
 			}
 		}
 	}
+
+	if (!bSkipGameplayFramework) 
+	{
+		RespawnAndDeserializeGameplayFramework();
+	}
+
 }
 
 void USlotDataTask_Loader::RespawnActors(const TArray<FActorRecord*>& Records, const ULevel* Level)
@@ -773,6 +624,166 @@ void USlotDataTask_Loader::RespawnActors(const TArray<FActorRecord*>& Records, c
 			}
 		}
 	}
+}
+
+void USlotDataTask_Loader::RespawnAndDeserializeGameplayFramework() 
+{
+	FLevelRecord& LevelRecord = SlotData->MainLevel;
+	const auto& Filter = GetLevelFilter(LevelRecord);
+	AGameStateBase* GameState = GetWorld()->GetGameState();
+	FActorSpawnParameters SpawnInfo{};
+	SpawnInfo.OverrideLevel = GetWorld()->GetCurrentLevel();
+	SpawnInfo.NameMode = FActorSpawnParameters::ESpawnActorNameMode::Requested;
+	// SpawnInfo.bDeferConstruction = true;
+	//  Respawn PlayerState and PlayerController
+	for (auto& PlayerStateRecord : SlotData->PlayerStateRecords)
+	{
+		bool bActivePlayerState = false;
+		APlayerState* DeserializedPlayerState = nullptr;
+		for (APlayerState* PlayerState : GameState->PlayerArray)
+		{
+			if (PlayerStateRecord.UniqueId == PlayerState->GetUniqueId().ToString())
+			{
+				DeserializedPlayerState = PlayerState;
+				bActivePlayerState = true;
+				// DeserializeActor(PlayerState, PlayerStateRecord, Filter);
+				ensure(DeserializedPlayerState->Rename(
+					*PlayerStateRecord.Name.ToString(), DeserializedPlayerState->GetOuter()));
+				break;
+			}
+		}
+		if (!DeserializedPlayerState)
+		{
+			SpawnInfo.Name = PlayerStateRecord.Name;
+			DeserializedPlayerState = Cast<APlayerState>(
+				GetWorld()->SpawnActor(PlayerStateRecord.SoftClassPath.TryLoadClass<APlayerState>(),
+					&PlayerStateRecord.Transform, SpawnInfo));
+			ensure(DeserializedPlayerState);
+			// AllDeferredRespawnedActors.Add(DeserializedPlayerState);
+		}
+		AController* DeserializedController = nullptr;
+
+		if (DeserializedPlayerState)
+		{
+			DeserializedController = DeserializedPlayerState->GetOwningController();
+		}
+
+
+		FPlayerControllerRecord* PlayerControllerRecord =
+			SlotData->PlayerControllerRecords.FindByKey(PlayerStateRecord.UniqueId);
+		if (PlayerControllerRecord)
+		{
+			if (DeserializedController)
+			{
+				ensure(DeserializedController->Rename(
+					*PlayerControllerRecord->Name.ToString(), DeserializedController->GetOuter()));
+			}
+			else
+			{
+				SpawnInfo.Name = PlayerControllerRecord->Name;
+				DeserializedController = Cast<AController>(GetWorld()->SpawnActor(
+					PlayerControllerRecord->SoftClassPath.TryLoadClass<AController>(),
+					&PlayerControllerRecord->Transform, SpawnInfo));
+				ensure(DeserializedController);
+				// AllDeferredRespawnedActors.Add(DeserializedController);
+			}
+		}
+
+
+		APawn* DeserializedPawn = nullptr;
+		if (DeserializedController)
+		{
+			DeserializedPawn = DeserializedController->GetPawn();
+		}
+		FPlayerControlleredPawnRecord* PlayerControlleredPawnRecord =
+			SlotData->PlayerControlleredPawnRecords.FindByKey(PlayerStateRecord.UniqueId);
+		ensure(PlayerControlleredPawnRecord);
+		if (PlayerControlleredPawnRecord)
+		{
+			if (DeserializedPawn)
+			{
+				if (DeserializedPawn->GetFName() != PlayerControlleredPawnRecord->Name)
+				{
+					ensure(DeserializedPawn->Rename(
+						*PlayerControlleredPawnRecord->Name.ToString(), DeserializedPawn->GetOuter()));
+				}
+			}
+			else
+			{
+				SpawnInfo.Name = PlayerControlleredPawnRecord->Name;
+				DeserializedPawn = Cast<APawn>(GetWorld()->SpawnActor(
+					PlayerControlleredPawnRecord->SoftClassPath.TryLoadClass<APawn>(),
+					&PlayerControlleredPawnRecord->Transform, SpawnInfo));
+				ensure(DeserializedPawn);
+				// AllDeferredRespawnedActors.Add(DeserializedPawn);
+			}
+		}
+
+
+		if (DeserializedPlayerState)
+		{
+			DeserializeActor(DeserializedPlayerState, PlayerStateRecord, Filter);
+			DeserializedPlayerState->UpdatePing(0);
+		}
+
+		if (DeserializedController && PlayerControllerRecord)
+		{
+			DeserializeActor(DeserializedController, *PlayerControllerRecord, Filter);
+		}
+
+		if (DeserializedPawn && PlayerControlleredPawnRecord)
+		{
+			DeserializeActor(DeserializedPawn, *PlayerControlleredPawnRecord, Filter);
+		}
+
+		if (DeserializedPawn && DeserializedController)
+		{
+			//// Hotfix Serialization Children
+			//auto OldControlleredPawn = DeserializedController->GetPawn();
+			//if (OldControlleredPawn)
+			//{
+			//	DeserializedController->Children.AddUnique(OldControlleredPawn);
+			//}
+			// if (!IsValid(DeserializedController->GetPawn()) ||
+			//	(DeserializedController->GetPawn()->GetName() != DeserializedPawn->GetName()))
+			//{
+			DeserializedController->Possess(DeserializedPawn);
+			//}
+		}
+		if (!bActivePlayerState)
+		{
+			// Mark controller and Associaed PlayerState for destruction,
+			// Or call AGameMode::AddInactivePlayer manully
+			// so rejoined players can be repossessed
+			if (DeserializedController)
+			{
+				DeserializedController->Destroy();
+			}
+			else
+			{
+				auto GameMode = Cast<AGameMode>(GetWorld()->GetAuthGameMode());
+				if (GameMode)
+				{
+					GameMode->AddInactivePlayer(DeserializedPlayerState, nullptr);
+				}
+			}
+		}
+	}
+
+	ensure(GameState);
+	if (GameState)
+	{
+		ensure(GameState->Rename(*SlotData->GameStateRecord.Name.ToString(), GameState->GetOuter()));
+		DeserializeActor(GameState, SlotData->GameStateRecord, Filter);
+	}
+	if (LevelRecord.LevelScript.IsValid())
+	{
+		auto pLevelScriptActor = GetWorld()->GetCurrentLevel()->GetLevelScriptActor();
+		DeserializeActor(pLevelScriptActor, LevelRecord.LevelScript, Filter);
+	}
+	
+	
+
 }
 
 void USlotDataTask_Loader::DeserializeLevel_Actor(AActor* const Actor, const FLevelRecord& LevelRecord, const FSELevelFilter& Filter)
@@ -845,6 +856,10 @@ bool USlotDataTask_Loader::DeserializeActor(AActor* Actor, const FActorRecord& R
 		Actor->Serialize(Archive);
 		UE_LOG(LogSaveExtension, Log, TEXT("DeserializeActor %s"), *Actor->GetName());
 		AllDeserializedObject.AddUnique(Actor);
+		if (IsValid(Actor->Owner)) 
+		{
+			Actor->Owner->Children.AddUnique(Actor);
+		}
 		//Deserialize_RepNotify(Actor);
 	}
 

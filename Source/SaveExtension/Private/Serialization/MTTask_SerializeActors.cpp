@@ -60,7 +60,8 @@ void FMTTask_SerializeActors::DoWork()
 			{
 				PlayerStateRecord.UniqueId = PlayerState->GetPlayerName();
 			}
-			SerializeActor(Actor, PlayerStateRecord);
+			SerializeActor(PlayerState, PlayerStateRecord);
+
 
 			auto pOwningController = PlayerState->GetOwningController();
 			if (pOwningController)
@@ -69,6 +70,7 @@ void FMTTask_SerializeActors::DoWork()
 				ControllerRecord.UniqueId = PlayerStateRecord.UniqueId;
 				SerializeActor(pOwningController, ControllerRecord);
 			}
+		
 			auto Pawn = PlayerState->GetPawn();
 			if (Pawn)
 			{

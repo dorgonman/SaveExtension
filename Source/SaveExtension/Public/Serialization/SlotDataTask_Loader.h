@@ -88,7 +88,7 @@ private:
 
 	/** Spawns Actors hat were saved but which actors are not in the world. */
 	void RespawnActors(const TArray<FActorRecord*>& Records, const ULevel* Level);
-
+	void RespawnAndDeserializeGameplayFramework() ;
 protected:
 
 	//~ Begin Files
@@ -111,8 +111,8 @@ protected:
 
 	void FinishedDeserializing();
 
-	void PrepareAllLevels();
-	void PrepareLevel(const ULevel* Level, FLevelRecord& LevelRecord);
+	void PrepareAllLevels(bool bSkipGameplayFramework, bool bRespawnActor);
+	void PrepareLevel(const ULevel* Level, FLevelRecord& LevelRecord, bool bRespawnActor);
 
 	/** Deserializes all Level actors. */
 	void DeserializeLevel_Actor(AActor* const Actor, const FLevelRecord& LevelRecord, const FSELevelFilter& Filter);
