@@ -29,7 +29,11 @@ public class SaveExtension : ModuleRules
 			"GameplayAbilities",
 			"UMG"
 		});
-
+		// Engine.Plugin
+		PrivateDependencyModuleNames.AddRange(new string[]
+		{
+			"MassLOD",
+		});
 	}
 }
 

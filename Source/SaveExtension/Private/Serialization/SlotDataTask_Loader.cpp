@@ -34,7 +34,8 @@
 #include "Serialization/SEArchive.h"
 
 
-
+// MassGameplay.MassLOD
+#include "MassLODSubsystem.h"
 
 
 
@@ -675,6 +676,14 @@ void USlotDataTask_Loader::RespawnAndDeserializeGameplayFramework()
 		{
 			if (DeserializedController)
 			{
+				// Other system, ex MassLODSubsystem, may hash Controller's name for their own purpose
+				// So we need to register, unregister the controller, so the system can update their hash
+				auto pMassLODSubsystem = GetWorld()->GetSubsystem<UMassLODSubsystem>();
+				if (pMassLODSubsystem)
+				{
+					pMassLODSubsystem->RegisterActorViewer(*DeserializedController);
+					pMassLODSubsystem->UnregisterActorViewer(*DeserializedController);
+				}
 				ensure(DeserializedController->Rename(
 					*PlayerControllerRecord->Name.ToString(), DeserializedController->GetOuter()));
 			}
